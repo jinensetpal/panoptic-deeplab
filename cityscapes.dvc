@@ -1,5 +1,5 @@
 outs:
-- md5: ed21ae13b8d91f2b2974924b827b49eb.dir
-  size: 24244537304
-  nfiles: 25005
+- md5: 06ae6050e094b67ae84c3c2dafae30de.dir
+  size: 12399642402
+  nfiles: 25003
   path: cityscapes
