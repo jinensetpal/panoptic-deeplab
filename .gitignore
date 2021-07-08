@@ -1,5 +1,4 @@
-venv/
+*venv*/
 workbench/
 latex/
-cityscapes/
 *.zip
