@@ -1,6 +1,8 @@
 panoptic-reproducibility
 ==============================
 
+https://paperswithcode.com/rc2020
+
 An implementation of panoptic-Deeplab for the reproducibility challenge
 
 Project Organization
