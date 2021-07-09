@@ -3,3 +3,5 @@ workbench/
 latex/
 cityscapes/
 *.zip
+.idea/
+.ipynb_checkpoints/

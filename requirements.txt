@@ -1,3 +1,11 @@
+brotlipy==0.7.0
 cityscapesscripts==2.2.0
 dvc==2.5.0
+jupyterlab==3.0.14
 pip-chill==1.0.1
+pyopenssl==20.0.1
+pyreadline==2.1
+pysocks==1.7.1
+scipy==1.7.0
+tensorflow==2.5.0
+tf-slim==1.1.0
