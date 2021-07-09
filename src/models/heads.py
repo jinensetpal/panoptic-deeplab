@@ -1,4 +1,7 @@
+import functools
+
 import tensorflow as tf
+from convolutions import StackedConv2DSame
 
 
 class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
@@ -32,7 +35,7 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
         super(PanopticDeepLabSingleHead, self).__init__(name=name)
         self._pred_key = pred_key
 
-        self.conv_block = convolutions.StackedConv2DSame(
+        self.conv_block = StackedConv2DSame(
             conv_type=conv_type,
             num_layers=1,
             output_channels=intermediate_channels,
@@ -42,7 +45,7 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
             use_bn=True,
             bn_layer=bn_layer,
             activation='relu')
-        self.final_conv = layers.Conv2D(
+        self.final_conv = tf.keras.layers.Conv2D(
             output_channels,
             kernel_size=1,
             name='final_conv',
@@ -61,3 +64,46 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
         """
         x = self.conv_block(features, training=training)
         return {self._pred_key: self.final_conv(x)}
+
+
+NUM_CLASSES = 9
+
+
+def get_semantic_head():
+    return PanopticDeepLabSingleHead(
+        256,
+        NUM_CLASSES,
+        'semantic_logits',
+        name='semantic_head',
+        conv_type=3,
+        bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
+                                   momentum=14,
+                                   epsilon=15)
+    )
+
+
+def get_instance_center_head():
+    return PanopticDeepLabSingleHead(
+        # 256,
+        # NUM_CLASSES,
+        # 'semantic_logits',
+        # name='semantic_head',
+        # conv_type=3,
+        # bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
+        #                            momentum=14,
+        #                            epsilon=15)
+    )
+
+
+def get_instance_regression_head():
+    return PanopticDeepLabSingleHead(
+        # 256,
+        # NUM_CLASSES,
+        # 'semantic_logits',
+        # name='semantic_head',
+        # conv_type=3,
+        # bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
+        #                            momentum=14,
+        #                            epsilon=15)
+    )
+
