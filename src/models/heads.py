@@ -84,26 +84,26 @@ def get_semantic_head():
 
 def get_instance_center_head():
     return PanopticDeepLabSingleHead(
-        # 256,
-        # NUM_CLASSES,
-        # 'semantic_logits',
-        # name='semantic_head',
-        # conv_type=3,
-        # bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
-        #                            momentum=14,
-        #                            epsilon=15)
+        32,
+        1,
+        'center_heatmap',
+        name='instance_center_head',
+        conv_type=3,
+        bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
+                                   momentum=14,
+                                   epsilon=15)
     )
 
 
 def get_instance_regression_head():
     return PanopticDeepLabSingleHead(
-        # 256,
-        # NUM_CLASSES,
-        # 'semantic_logits',
-        # name='semantic_head',
-        # conv_type=3,
-        # bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
-        #                            momentum=14,
-        #                            epsilon=15)
+        32,
+        2,
+        'offset_map',
+        name='instance_regression_head',
+        conv_type=3,
+        bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
+                                   momentum=14,
+                                   epsilon=15)
     )
 
