@@ -2,7 +2,7 @@ import functools
 import tensorflow as tf
 from convolutions import StackedConv2DSame
 
-NUM_CLASSES = 9  # not sure about that
+NUM_CLASSES = 19 
 
 
 def get_semantic_head():
