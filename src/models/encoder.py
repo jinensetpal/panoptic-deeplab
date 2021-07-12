@@ -1,3 +1,5 @@
+# draft
+
 import tensorflow as tf
 import src.common as common
 
@@ -17,4 +19,4 @@ def xception():
     # Create the feature extraction model
     down_stack = tf.keras.Model(inputs=base_model.input, outputs=base_model_outputs)
     down_stack.trainable = False
-    return down_stack
+    return down_stack, base_model_outputs[0], base_model_outputs[1]
