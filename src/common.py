@@ -4,3 +4,5 @@ PRED_KEY_INSTANCE_CENTER = 'instance_center'
 GT_KEY_INSTANCE_CENTER = 'instance_center'
 PRED_KEY_CENTER_REGRESSION = 'center_regression'
 GT_KEY_CENTER_REGRESSION = 'center_regression'
+NUM_CLASSES = 19
+PANOPTIC_LABEL_DIVISOR = 10000

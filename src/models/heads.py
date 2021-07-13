@@ -3,13 +3,11 @@ import tensorflow as tf
 from convolutions import StackedConv2DSame
 import src.common as common
 
-NUM_CLASSES = 19 
-
 
 def get_semantic_head():
     return PanopticDeepLabSingleHead(
         256,
-        NUM_CLASSES,
+        common.NUM_CLASSES,
         common.PRED_KEY_SEMANTIC,
         name='semantic_head',
         conv_type=3,
