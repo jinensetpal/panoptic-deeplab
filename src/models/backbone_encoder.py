@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Input, Conv2D, SeparableConv2D, add, BatchNormalization, Activation, MaxPooling2D
 from tensorflow.keras import Model
 from keras.applications.xception import Xception
-from ..const.const import INPUT_SHAPE
+from ..const.general_const import INPUT_SHAPE
 
 
 def conv_bn(x, filters, kernel_size, strides=(1, 1), use_bias=True,
