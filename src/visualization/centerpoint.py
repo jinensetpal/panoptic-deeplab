@@ -8,7 +8,7 @@ def to_file(center, heatmap, filename):
       heatmap: generated groundtruth heatmap image
     """
 
-    # scaling encoding from so the difference is visually apparent
+    # scaling encoding so the difference is visually apparent
     cv2.imwrite(filename + '-center.png', np.where(center == 1, 65000, center))
     cv2.imwrite(filename + '-heatmap.png', heatmap * 1000)
 
