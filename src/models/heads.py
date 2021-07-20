@@ -1,6 +1,6 @@
 import functools
 import tensorflow as tf
-from convolutions import StackedConv2DSame
+from src.models.convolutions import StackedConv2DSame
 import src.common as common
 
 
@@ -10,7 +10,7 @@ def get_semantic_head():
         common.NUM_CLASSES,
         common.PRED_KEY_SEMANTIC,
         name='semantic_head',
-        conv_type=3,
+        #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
                                    momentum=14,
                                    epsilon=15)
@@ -23,7 +23,7 @@ def get_instance_center_head():
         1,
         common.PRED_KEY_INSTANCE_CENTER,
         name='instance_center_head',
-        conv_type=3,
+        #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
                                    momentum=14,
                                    epsilon=15)
@@ -36,7 +36,7 @@ def get_instance_regression_head():
         2,
         common.PRED_KEY_CENTER_REGRESSION,
         name='instance_regression_head',
-        conv_type=3,
+        #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
                                    momentum=14,
                                    epsilon=15)

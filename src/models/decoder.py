@@ -1,6 +1,6 @@
 import tensorflow as tf 
 
-import utils, aspp, convolutions
+from src.models import utils, aspp, convolutions
 
 def get_decoder(name):
     return PanopticDeepLabSingleDecoder(high_level_feature_name='res5',
@@ -109,7 +109,9 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       Refined features as instance of tf.Tensor.
     """
 
-    high_level_features = features[self._high_level_feature_name]
+    #print(features)
+    #print(self._high_level_feature_name)
+    high_level_features = features # [self._high_level_feature_name]
     combined_features = self._aspp(high_level_features, training=training)
 
     # Fuse low-level features with high-level features.
@@ -118,7 +120,10 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
           utils.get_low_level_conv_fusion_conv_current_names(i))
       # Iterate from the highest level of the low level features to the lowest
       # level, i.e. take the features with the smallest spatial size first.
-      low_level_features = features[self._low_level_feature_names[i]]
+      #print(features)
+      #print(self._low_level_feature_names)
+    
+      low_level_features = features # [self._low_level_feature_names[i]]
       low_level_features = getattr(self, current_low_level_conv_name)(
           low_level_features, training=training)
 

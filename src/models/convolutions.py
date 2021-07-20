@@ -24,8 +24,7 @@ rate. It also has optional pre- and post-global context layers.
 import functools
 from typing import Optional
 import tensorflow as tf
-import utils
-import activations
+from src.models import utils, activations
 
 
 def _compute_padding_size(kernel_size, atrous_rate):

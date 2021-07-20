@@ -26,8 +26,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import tensorflow as tf
 
-import coco_tools
-import panoptic_instances
+from src.models import coco_tools, panoptic_instances
 
 
 def _unwrap_segmentation(seg):
