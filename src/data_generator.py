@@ -1,6 +1,7 @@
 import os
 import cv2
 import random
+import pickle
 import numpy as np
 import tensorflow as tf
 from src.centerpoint import get_centerpoints
@@ -76,25 +77,24 @@ class DataGenerator(tf.keras.utils.Sequence):
             
             # load images
             X_tar = cv2.imread(os.path.join(BASE_DATA_PATH, 'leftImg8bit', self.state, LOC, PREF + 'leftImg8bit' + '.png'), cv2.IMREAD_UNCHANGED)
-            # y_tar = {"segmentation_target": cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
-            y_tar = [cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED),]
+            y_tar = {"segmentation_target": cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
             y_inst = cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED)
             y_inst = np.repeat(y_inst[:, :, np.newaxis], 3, axis=2)
-            
+
             X_tar = cv2.resize(X_tar, IMG_SIZE[::-1])
-            y_tar[0] = cv2.resize(y_tar[0], IMG_SIZE[::-1])
+            y_tar["segmentation_target"] = cv2.resize(y_tar["segmentation_target"], IMG_SIZE[::-1])
             y_inst = cv2.resize(y_inst, IMG_SIZE[::-1])
             
             if self.state == "train":
                 params = self.augmentation_params() # randomize on seed
                 X_tar = self.gen.apply_transform(x=X_tar, transform_parameters=params)
-                y_tar[0] = self.gen.apply_transform(x=y_tar[0], transform_parameters=params)
+                y_tar["segmentation_target"] = self.gen.apply_transform(x=y_tar["segmentation_target"], transform_parameters=params)
                 y_inst = self.gen.apply_transform(x=y_inst, transform_parameters=params)
             
             # update targets
-            y_tar.extend(get_centerpoints(y_inst))
+            y_tar.update(get_centerpoints(y_inst))
             
             X[i,] = X_tar
-            y[i] = np.array(y_tar)
+            y[i] = y_tar
 
         return X, y

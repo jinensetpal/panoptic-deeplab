@@ -31,14 +31,13 @@ def get_centerpoints(img,
                      path=None):
     """ generates targets for center heatmap
     Args:
-      filename: image filename for which centerpoint and heatmap are derived
+      img: image input for which centerpoint and heatmap are derived; input numpy numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
       sigma: standard deviation of the gaussian heatmap from the centerpoint
       path: write location to test output. None by default
         
     Returns:
       A tuple containing groundtruth instance centerpoints and gaussian heatmaps
     """
-    #img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     
     center_points = {}
     for length in range(img.shape[0]):
@@ -90,4 +89,3 @@ def get_centerpoints(img,
         
     return dict(keypoint_target=center, 
                 gaussian_target=heatmap)
-    #return [center, heatmap]
