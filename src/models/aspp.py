@@ -26,7 +26,6 @@ import tensorflow as tf
 
 from src.models import utils, convolutions
 
-
 layers = tf.keras.layers
 backend = tf.keras.backend
 
