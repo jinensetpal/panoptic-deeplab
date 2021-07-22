@@ -88,6 +88,6 @@ def get_centerpoints(img,
     if path:
         to_file(center, heatmap, path)
         
-    #return dict(keypoint_target=center, 
-                #gaussian_target=heatmap)
-    return [center, heatmap]
+    return dict(keypoint_target=center, 
+                gaussian_target=heatmap)
+    #return [center, heatmap]
