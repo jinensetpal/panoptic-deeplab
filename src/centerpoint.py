@@ -3,7 +3,7 @@ import cv2
 import pprint
 import pickle
 import numpy as np
-from src import centerpoint
+from src import common
 
 def to_file(center, heatmap, filename): 
     """ writes files to storage; testing
