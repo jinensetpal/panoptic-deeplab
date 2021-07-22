@@ -3,6 +3,7 @@ import cv2
 import pprint
 import pickle
 import numpy as np
+from src import centerpoint
 
 def to_file(center, heatmap, filename): 
     """ writes files to storage; testing
@@ -87,5 +88,5 @@ def get_centerpoints(img,
     if path:
         to_file(center, heatmap, path)
         
-    return dict(keypoint_target=center, 
-                gaussian_target=heatmap)
+    return dict(common.GT_KEY_INSTANCE_CENTER=center, 
+                common.GT_KEY_CENTER_REGRESSION=heatmap)
