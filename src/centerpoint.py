@@ -26,6 +26,21 @@ def avg_pos(position, new_position):
     """
     return [(position[2] * position[0] + new_position[0]) / (position[2] + 1), (position[1] * position[2] + new_position[1]) / (position[2] + 1), position[2] + 1]
 
+def instance_id(center, pixel, off):
+    """
+    Args:
+      center: list of centerpoints
+      pixel: pixel for instance prediction
+      off: predicted offset vector
+    Returns:
+      The predicted instance id for a given pixel
+    """
+    pred = []
+    for instance in range(len(center)):
+        pred.append([round((center[instance][0] - off[0] + pred[0]) ** 2), round((center[instance][1] - off[1] + pred[1]]) ** 2))
+
+    return np.argmin(pred)
+
 def get_centerpoints(img,
                      sigma=8,
                      path=None):
