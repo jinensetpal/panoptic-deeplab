@@ -37,7 +37,7 @@ def instance_id(center, pixel, off):
     """
     pred = []
     for instance in range(len(center)):
-        pred.append([round((center[instance][0] - off[0] + pred[0]) ** 2), round((center[instance][1] - off[1] + pred[1]]) ** 2))
+        pred.append([round((center[instance][0] - off[0] + pred[0]) ** 2), round((center[instance][1] - off[1] + pred[1]) ** 2)])
 
     return np.argmin(pred)
 
