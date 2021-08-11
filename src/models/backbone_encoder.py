@@ -128,27 +128,27 @@ def build_backbone(input_layer):
     residual = BatchNormalization()(residual)
 
     x = block_2(x)
-    x = add([x, residual])
+    res2 = add([x, residual])
+    print(f"RES2: {res2.shape}")
 
-    residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res2)
     residual = BatchNormalization()(residual)
 
-    x = block_3(x)
-    x = add([x, residual])
+    x = block_3(res2)
+    res3 = add([x, residual])
+    print(f"RES3: {res3.shape}")
 
-    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res3)
     residual = BatchNormalization()(residual)
 
-    x = block_4(x)
+    x = block_4(res3)
     x = add([x, residual])
 
     residual = x
-
     x = block_5(x)
-
     x = add([x, residual])
-
-    return x
+    
+    return x, res2, res3
 
 
 def set_xception_weights(layer_index, backbone_model, xception_model):
@@ -173,7 +173,7 @@ def create_backbone_model(input_shape=None):
     if input_shape is None:
         input_shape = INPUT_SHAPE
     input = Input(shape=input_shape)
-    x = build_backbone(input)
+    x, res2, res3 = build_backbone(input)
     backbone_model = Model(input, x)
 
     xception_model = Xception(input_shape=input_shape, include_top=False, weights='imagenet')
@@ -181,14 +181,14 @@ def create_backbone_model(input_shape=None):
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
-    return backbone_model
+    return backbone_model, res2, res3
 
 if __name__ == '__main__':
 
     input_shape = INPUT_SHAPE
-    input = Input(shape=input_shape)
-    x = build_backbone(input)
-    backbone_model = Model(input, x, name="backbone_model")
+    input_layer = Input(shape=input_shape)
+    x = build_backbone(input_layer)
+    backbone_model = Model(input_layer, x, name="backbone_model")
 
     xception_model = Xception(input_shape=INPUT_SHAPE, include_top=False, weights='imagenet')
 
