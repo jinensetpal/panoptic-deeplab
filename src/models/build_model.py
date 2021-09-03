@@ -8,15 +8,16 @@ def get_model(input_shape=None):
 
     inp = Input(shape=input_shape)
     backbone, res2, res3 = backbone_encoder.create_backbone_model()
-    print(type(backbone))
-    print(backbone)
-    backbone = Sequential([backbone])
+
+    #backbone = Sequential([backbone])
     sem_decoder, inst_decoder = decoder.get_decoder('semantic_decoder'), decoder.get_decoder('instance_decoder')
-    sem_head, inst_ctr_head, inst_rgr_head = Sequential([heads.get_semantic_head()]), Sequential([heads.get_instance_center_head()]), Sequential([heads.get_instance_regression_head()])
+    #sem_head, inst_ctr_head, inst_rgr_head = Sequential([heads.get_semantic_head()]), Sequential([heads.get_instance_center_head()]), Sequential([heads.get_instance_regression_head()])
+    sem_head, inst_ctr_head, inst_rgr_head = heads.get_semantic_head(), heads.get_instance_center_head(), heads.get_instance_regression_head()
     
     latent = backbone(inp)
+    print("LATENT FEATURES BE LIKE")
     print(type(latent))
-    print(latent)
+    print(backbone)
     
     latent = {'res5': latent,
               'res2': res2,

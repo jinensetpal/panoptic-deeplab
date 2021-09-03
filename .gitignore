@@ -1,6 +1,7 @@
 *venv*/
-workbench/
 latex/
 *.zip
 .idea/
 .ipynb_checkpoints/
+__pycache__
+=*

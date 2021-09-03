@@ -1,6 +1,6 @@
 from tensorflow.keras.layers import Input, Conv2D, SeparableConv2D, add, BatchNormalization, Activation, MaxPooling2D
 from tensorflow.keras import Model
-from keras.applications.xception import Xception
+from tensorflow.keras.applications.xception import Xception
 from ..const.general_const import INPUT_SHAPE
 
 
