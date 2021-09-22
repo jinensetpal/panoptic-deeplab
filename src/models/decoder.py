@@ -1,6 +1,7 @@
-import tensorflow as tf 
+import tensorflow as tf
 
 from src.models import utils, aspp, convolutions
+from typing import Union
 #from tensorflow.keras.layers import merge
 
 def get_decoder(name):
@@ -97,6 +98,15 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
               use_bn=True,
               bn_layer=bn_layer,
               activation='relu'))
+    try:
+        from tensorflow.python.keras.engine.keras_tensor import KerasTensor
+
+        # Necessary due to https://github.com/tensorflow/tensorflow/issues/44613
+        TensorType = Union[tf.Tensor, KerasTensor]
+        print("TENSORTYPE")
+    except ImportError:
+        TensorType = tf.Tensor
+
 
   def call(self, features, training=False):
     """Performs a forward pass.
@@ -110,8 +120,13 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       Refined features as instance of tf.Tensor.
     """
 
+    print("run with this")
+    print(features)
+    print(self._skip)
+    features.update(self._skip)
     print(features)
     print([self._high_level_feature_name])
+
     high_level_features = features[self._high_level_feature_name]
     combined_features = self._aspp(high_level_features, training=training)
 
@@ -121,7 +136,7 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
           utils.get_low_level_conv_fusion_conv_current_names(i))
       # Iterate from the highest level of the low level features to the lowest
       # level, i.e. take the features with the smallest spatial size first.
-      
+
       print(features)
       print(type(features))
       print(self._low_level_feature_names)
@@ -136,6 +151,12 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       target_w = tf.shape(low_level_features)[2]
       source_h = tf.shape(combined_features)[1]
       source_w = tf.shape(combined_features)[2]
+
+      print('FEATURES COMPARISON')
+      print('target_h', target_h)
+      print('target_w', target_w)
+      print('source_h', source_h)
+      print('source_w', source_w)
 
       tf.assert_less(
           source_h - 1,
@@ -169,3 +190,7 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
 
   def get_pool_size(self):
     return self._aspp.get_pool_size()
+
+  def put_skip(self, res2, res3):
+      self._skip = {'res2':res2,
+                    'res3':res3}
