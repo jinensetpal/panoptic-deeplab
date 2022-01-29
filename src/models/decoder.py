@@ -1,3 +1,4 @@
+from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 import tensorflow as tf
 
 from src.models import utils, aspp, convolutions
@@ -99,7 +100,6 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
               bn_layer=bn_layer,
               activation='relu'))
     try:
-        from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 
         # Necessary due to https://github.com/tensorflow/tensorflow/issues/44613
         TensorType = Union[tf.Tensor, KerasTensor]
@@ -129,9 +129,14 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
 
     high_level_features = features[self._high_level_feature_name]
     combined_features = self._aspp(high_level_features, training=training)
+    print('TYPE COMPARISON')
+    print(type(self._aspp))
+    print(type(combined_features))
 
     # Fuse low-level features with high-level features.
     for i in range(len(self._low_level_feature_names)):
+      print(type(combined_features))
+
       current_low_level_conv_name, current_fusion_conv_name = (
           utils.get_low_level_conv_fusion_conv_current_names(i))
       # Iterate from the highest level of the low level features to the lowest
@@ -144,19 +149,22 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       print("TYPE:", type([self._low_level_feature_names[i]]))
     
       low_level_features = features[self._low_level_feature_names[i]]
+      print(low_level_features)
       low_level_features = getattr(self, current_low_level_conv_name)(
           low_level_features, training=training)
 
-      target_h = tf.shape(low_level_features)[1]
-      target_w = tf.shape(low_level_features)[2]
-      source_h = tf.shape(combined_features)[1]
-      source_w = tf.shape(combined_features)[2]
+      print(type(combined_features)) 
+      target_h = low_level_features.shape[1]
+      target_w = low_level_features.shape[2]
+      source_h = combined_features.shape[1]
+      source_w = combined_features.shape[2]
 
       print('FEATURES COMPARISON')
       print('target_h', target_h)
       print('target_w', target_w)
       print('source_h', source_h)
       print('source_w', source_w)
+      print(type(combined_features)) 
 
       tf.assert_less(
           source_h - 1,
@@ -167,6 +175,7 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
           target_w,
           message='Features are down-sampled during decoder.')
 
+      print(type(combined_features)) # has to be converted to tf.Tensor from KerasTensor 
       combined_features = utils.resize_align_corners(combined_features,
                                                      [target_h, target_w])
 

@@ -1,15 +1,15 @@
+from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from src.models import backbone_encoder, decoder, heads
 from tensorflow.keras import Input, Sequential, Model
-from ..const.general_const import INPUT_SHAPE
-from typing import Union
-from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from tensorflow import convert_to_tensor
-import tensorflow as tf
+from ..const import IMG_SHAPE
 from tensorflow import keras
+from typing import Union
+import tensorflow as tf
 
 def get_model(input_shape=None):
     if not input_shape:
-        input_shape = INPUT_SHAPE
+        input_shape = IMG_SHAPE
 
     inp = Input(shape=input_shape)
     backbone, res2, res3 = backbone_encoder.create_backbone_model()
@@ -46,3 +46,50 @@ def get_model(input_shape=None):
     
     model = Model(inputs=inp, outputs=[sem_output, inst_ctr_output, inst_rgr_output])
     return model
+
+if __name__ == '__main__':
+    from src.const import SEED_TRAIN, SEED_VAL, SEED_TEST, BASE_DATA_PATH, IMG_SIZE, N_CHANNELS, N_CLASSES, BATCH_SIZE
+    from tensorflow.keras.models import Sequential
+    from src.data_generator import DataGenerator
+    import glob
+    import os 
+
+    partition = {}
+    partition = {'train': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'train', '*', '*color*')),
+                 'val': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'val', '*', '*color*')),
+                 'test': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'test', '*', '*color*'))}
+
+    params = {'dim': IMG_SIZE,
+              'batch_size': BATCH_SIZE,
+              'n_classes': N_CLASSES,
+              'n_channels': N_CHANNELS,
+              'shuffle': True,
+              'augment': {'zoom_range': [5, 20],
+                          'random_flip': True}}
+
+    # Generators
+    training_generator = DataGenerator(partition['train'], state='train', seed=SEED_TRAIN, **params)
+    validation_generator = DataGenerator(partition['val'], state='val', seed=SEED_VAL, **params)
+    test_generator = DataGenerator(partition['test'], state='test', seed=SEED_TEST, **params)
+
+    model = get_model()
+    print('this happened successfully')
+
+    EPOCHS = 10
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001)
+
+    losses = []
+    for epoch in range(EPOCHS):
+      for batch in range(training_generator.__len__()):
+        X, y = training_generator.__getitem__(batch)
+        with tf.GradientTape() as tape:
+          seg_pred, kpt_pred, regr_pred = model(X, training=True)
+          y_pred = {}
+          y_pred.update(seg_pred)
+          y_pred.update(kpt_pred)
+          y_pred.update(regr_pred)
+
+          loss = loss_panoptic(y[batch], y_pred)
+          gradients = tape.gradient(loss, tape.watched_variables())
+          optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
+

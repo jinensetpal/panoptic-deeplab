@@ -6,7 +6,7 @@ import numpy as np
 from src import common
 import tensorflow as tf
 from src.centerpoint import get_centerpoints
-from src.const.general_const import BASE_DATA_PATH, IMG_SIZE
+from src.const import BASE_DATA_PATH, IMG_SIZE
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 

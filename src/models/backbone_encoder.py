@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Input, Conv2D, SeparableConv2D, add, BatchNormalization, Activation, MaxPooling2D
 from tensorflow.keras import Model
 from tensorflow.keras.applications.xception import Xception
-from ..const.general_const import INPUT_SHAPE
+from ..const import IMG_SHAPE
 
 
 def conv_bn(x, filters, kernel_size, strides=(1, 1), use_bias=True,
@@ -171,7 +171,7 @@ def create_backbone_model(input_shape=None):
     :return: backbone model using the first 5 layers of Xception using pre-trained wights
     """
     if input_shape is None:
-        input_shape = INPUT_SHAPE
+        input_shape = IMG_SHAPE
     input = Input(shape=input_shape)
     x, res2, res3 = build_backbone(input)
     backbone_model = Model(input, x)
@@ -185,12 +185,12 @@ def create_backbone_model(input_shape=None):
 
 if __name__ == '__main__':
 
-    input_shape = INPUT_SHAPE
+    input_shape = IMG_SHAPE
     input_layer = Input(shape=input_shape)
     x = build_backbone(input_layer)
     backbone_model = Model(input_layer, x, name="backbone_model")
 
-    xception_model = Xception(input_shape=INPUT_SHAPE, include_top=False, weights='imagenet')
+    xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
 
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
