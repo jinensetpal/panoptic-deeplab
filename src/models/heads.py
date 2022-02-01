@@ -1,14 +1,14 @@
-import functools
-import tensorflow as tf
+from src.const import N_CLASSES, PRED_KEY_SEMANTIC, PRED_KEY_INSTANCE_CENTER, PRED_KEY_CENTER_REGRESSION
 from src.models.convolutions import StackedConv2DSame
-import src.common as common
+import tensorflow as tf
+import functools
 
 
 def get_semantic_head():
     return PanopticDeepLabSingleHead(
         256,
-        common.NUM_CLASSES,
-        common.PRED_KEY_SEMANTIC,
+        N_CLASSES,
+        PRED_KEY_SEMANTIC,
         name='semantic_head',
         #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
@@ -21,7 +21,7 @@ def get_instance_center_head():
     return PanopticDeepLabSingleHead(
         32,
         1,
-        common.PRED_KEY_INSTANCE_CENTER,
+        PRED_KEY_INSTANCE_CENTER,
         name='instance_center_head',
         #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,
@@ -34,7 +34,7 @@ def get_instance_regression_head():
     return PanopticDeepLabSingleHead(
         32,
         2,
-        common.PRED_KEY_CENTER_REGRESSION,
+        PRED_KEY_CENTER_REGRESSION,
         name='instance_regression_head',
         #conv_type=3,
         bn_layer=functools.partial(tf.keras.layers.BatchNormalization,

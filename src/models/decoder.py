@@ -1,9 +1,24 @@
-from tensorflow.python.keras.engine.keras_tensor import KerasTensor
+from src.models import utils, aspp, convolutions
 import tensorflow as tf
 
-from src.models import utils, aspp, convolutions
-from typing import Union
-#from tensorflow.keras.layers import merge
+
+def build_decoder(latent, skip, name):
+    l1 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(latent)
+
+    concat01 = layers.concatenate([l1, skip[1]], axis=-1)
+    l2 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(concat01)
+
+    concat02 = layers.concatenate([l2, skip[0]], axis=-1)
+    l3 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(concat02)
+
+    l4 = None # extending scope
+    if 'instance' in name:
+        l4 = layers.Conv2DTranspose(128, kernel_size=2, strides=(2, 2), activation='relu')(l3)
+    else:
+        l4 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(l3)
+
+    decoder = tf.keras.Model(inputs=[latent, skip], outputs=l4, name=name)
+    return decoder
 
 def get_decoder(name):
     return PanopticDeepLabSingleDecoder(high_level_feature_name='res5',
@@ -99,14 +114,6 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
               use_bn=True,
               bn_layer=bn_layer,
               activation='relu'))
-    try:
-
-        # Necessary due to https://github.com/tensorflow/tensorflow/issues/44613
-        TensorType = Union[tf.Tensor, KerasTensor]
-        print("TENSORTYPE")
-    except ImportError:
-        TensorType = tf.Tensor
-
 
   def call(self, features, training=False):
     """Performs a forward pass.
@@ -120,51 +127,25 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       Refined features as instance of tf.Tensor.
     """
 
-    print("run with this")
-    print(features)
-    print(self._skip)
-    features.update(self._skip)
-    print(features)
-    print([self._high_level_feature_name])
+#    features.update(more_features)
 
     high_level_features = features[self._high_level_feature_name]
     combined_features = self._aspp(high_level_features, training=training)
-    print('TYPE COMPARISON')
-    print(type(self._aspp))
-    print(type(combined_features))
 
     # Fuse low-level features with high-level features.
     for i in range(len(self._low_level_feature_names)):
-      print(type(combined_features))
-
       current_low_level_conv_name, current_fusion_conv_name = (
           utils.get_low_level_conv_fusion_conv_current_names(i))
       # Iterate from the highest level of the low level features to the lowest
       # level, i.e. take the features with the smallest spatial size first.
 
-      print(features)
-      print(type(features))
-      print(self._low_level_feature_names)
-      print("IMP:", [self._low_level_feature_names[i]])
-      print("TYPE:", type([self._low_level_feature_names[i]]))
-    
       low_level_features = features[self._low_level_feature_names[i]]
-      print(low_level_features)
-      low_level_features = getattr(self, current_low_level_conv_name)(
-          low_level_features, training=training)
+      low_level_features = getattr(self, current_low_level_conv_name)(low_level_features, training=training)
 
-      print(type(combined_features)) 
       target_h = low_level_features.shape[1]
       target_w = low_level_features.shape[2]
       source_h = combined_features.shape[1]
       source_w = combined_features.shape[2]
-
-      print('FEATURES COMPARISON')
-      print('target_h', target_h)
-      print('target_w', target_w)
-      print('source_h', source_h)
-      print('source_w', source_w)
-      print(type(combined_features)) 
 
       tf.assert_less(
           source_h - 1,
@@ -175,7 +156,6 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
           target_w,
           message='Features are down-sampled during decoder.')
 
-      print(type(combined_features)) # has to be converted to tf.Tensor from KerasTensor 
       combined_features = utils.resize_align_corners(combined_features,
                                                      [target_h, target_w])
 

@@ -42,8 +42,8 @@ def block_1(input_layer):
 
     x = Activation('relu', name='block1_conv1_act')(x)
 
-    x = conv_bn(x, filters=64, kernel_size=(3, 3), use_bias=False,
-                block_num="1", conv_bn_num="2")
+    x = conv_bn(x, filters=64, kernel_size=(3, 3), strides=(1, 1), use_bias=False,
+                padding="same", block_num="1", conv_bn_num="2")
 
     x = Activation('relu', name='block1_conv2_act')(x)
 
@@ -129,14 +129,12 @@ def build_backbone(input_layer):
 
     x = block_2(x)
     res2 = add([x, residual])
-    print(f"RES2: {res2.shape}")
 
     residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res2)
     residual = BatchNormalization()(residual)
 
     x = block_3(res2)
     res3 = add([x, residual])
-    print(f"RES3: {res3.shape}")
 
     residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res3)
     residual = BatchNormalization()(residual)
@@ -163,25 +161,25 @@ def set_xception_weights(layer_index, backbone_model, xception_model):
     backbone_model.get_layer(index=layer_index).set_weights(xception_model.get_layer(index=layer_index).get_weights())
     return backbone_model
 
-def create_backbone_model(input_shape=None):
+def create_backbone_model(inp=None):
     """
     Build a backbone model using the first 5 layers of Xception using it's pre-trained wights
 
     :param input_shape: list with 3 elements, the input shape for the backbone model
     :return: backbone model using the first 5 layers of Xception using pre-trained wights
     """
-    if input_shape is None:
-        input_shape = IMG_SHAPE
-    input = Input(shape=input_shape)
-    x, res2, res3 = build_backbone(input)
-    backbone_model = Model(input, x)
+    if inp is None:
+        inp = Input(shape=IMG_SHAPE)
 
-    xception_model = Xception(input_shape=input_shape, include_top=False, weights='imagenet')
+    x, res2, res3 = build_backbone(inp)
+    backbone_model = Model(inp, x)
+
+    xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
 
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
-    return backbone_model, res2, res3
+    return backbone_model, res2, res3, x
 
 if __name__ == '__main__':
 

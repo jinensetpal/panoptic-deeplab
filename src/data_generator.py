@@ -1,14 +1,13 @@
-import os
-import cv2
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from src.const import BASE_DATA_PATH, IMG_SIZE
+from src.centerpoint import get_centerpoints
+import tensorflow as tf
+from src import const
+import numpy as np
 import random
 import pickle
-import numpy as np
-from src import common
-import tensorflow as tf
-from src.centerpoint import get_centerpoints
-from src.const import BASE_DATA_PATH, IMG_SIZE
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
+import cv2
+import os
 
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
@@ -78,18 +77,18 @@ class DataGenerator(tf.keras.utils.Sequence):
             
             # load images
             X_tar = cv2.imread(os.path.join(BASE_DATA_PATH, 'leftImg8bit', self.state, LOC, PREF + 'leftImg8bit' + '.png'), cv2.IMREAD_UNCHANGED)
-            y_tar = {common.GT_KEY_SEMANTIC: cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
+            y_tar = {const.GT_KEY_SEMANTIC: cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
             y_inst = cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED)
             y_inst = np.repeat(y_inst[:, :, np.newaxis], 3, axis=2)
 
             X_tar = cv2.resize(X_tar, IMG_SIZE[::-1])
-            y_tar[common.GT_KEY_SEMANTIC] = cv2.resize(y_tar[common.GT_KEY_SEMANTIC], IMG_SIZE[::-1])
+            y_tar[const.GT_KEY_SEMANTIC] = cv2.resize(y_tar[const.GT_KEY_SEMANTIC], IMG_SIZE[::-1])
             y_inst = cv2.resize(y_inst, IMG_SIZE[::-1])
             
             if self.state == "train":
                 params = self.augmentation_params() # randomize on seed
                 X_tar = self.gen.apply_transform(x=X_tar, transform_parameters=params)
-                y_tar[common.GT_KEY_SEMANTIC] = self.gen.apply_transform(x=y_tar[common.GT_KEY_SEMANTIC], transform_parameters=params)
+                y_tar[const.GT_KEY_SEMANTIC] = self.gen.apply_transform(x=y_tar[const.GT_KEY_SEMANTIC], transform_parameters=params)
                 y_inst = self.gen.apply_transform(x=y_inst, transform_parameters=params)
             
             # update targets
