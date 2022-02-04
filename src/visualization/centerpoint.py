@@ -1,5 +1,6 @@
-import cv2
+from src import const
 import numpy as np
+import cv2
 
 def to_file(center, heatmap, filename): 
     """ writes files to storage; testing
@@ -82,4 +83,5 @@ def get_center_targets(img,
         
     if path:
         to_file(center, heatmap, path)
-    return (center, heatmap)
+    return {const.GT_KEY_INSTANCE_CENTER: center, 
+            const.GT_KEY_CENTER_REGRESSION: heatmap}

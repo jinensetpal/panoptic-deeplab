@@ -1,8 +1,11 @@
 from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from src.models import backbone_encoder, decoder, heads
 from tensorflow.keras import Input, Sequential, Model
-from ..const import IMG_SHAPE
+from ..const import IMG_SHAPE, EPOCHS
 import tensorflow as tf
+from src.models.loss import loss_panoptic 
+from tqdm import tqdm
+import time
 
 def get_model(input_shape=None):
     if not input_shape:
@@ -21,7 +24,6 @@ def get_model(input_shape=None):
     sem_output, inst_ctr_output, inst_rgr_output = sem_head(sem_latent), inst_ctr_head(inst_latent), inst_rgr_head(inst_latent)
     
     model = Model(inputs=inp, outputs=[sem_output, inst_ctr_output, inst_rgr_output])
-    # model = Model(inputs=inp, outputs=[sem_latent, inst_latent])
     return model
 
 if __name__ == '__main__':
@@ -31,7 +33,6 @@ if __name__ == '__main__':
     import glob
     import os 
 
-    partition = {}
     partition = {'train': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'train', '*', '*color*')),
                  'val': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'val', '*', '*color*')),
                  'test': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'test', '*', '*color*'))}
@@ -50,13 +51,16 @@ if __name__ == '__main__':
     test_generator = DataGenerator(partition['test'], state='test', seed=SEED_TEST, **params)
 
     model = get_model()
+    model.summary()
 
-    EPOCHS = 10
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=optimizer, loss=loss_panoptic, metrics=["accuracy"])
 
+    start_time = time.time()
     losses = []
     for epoch in range(EPOCHS):
-      for batch in range(training_generator.__len__()):
+      print(f'------- EPOCH {epoch + 1} -------')
+      for batch in tqdm(range(training_generator.__len__())):
         X, y = training_generator.__getitem__(batch)
         with tf.GradientTape() as tape:
           seg_pred, kpt_pred, regr_pred = model(X, training=True)
@@ -66,6 +70,11 @@ if __name__ == '__main__':
           y_pred.update(regr_pred)
 
           loss = loss_panoptic(y[batch], y_pred)
+          print(loss)
           gradients = tape.gradient(loss, tape.watched_variables())
           optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
+          losses.append(loss)
+
+        print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
+        .format(epoch + 1, (time.time() - start_time) / 60, loss)) 
 

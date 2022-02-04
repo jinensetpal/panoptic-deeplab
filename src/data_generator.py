@@ -1,6 +1,6 @@
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from src.const import BASE_DATA_PATH, IMG_SIZE
-from src.centerpoint import get_centerpoints
+from src.visualization.centerpoint import get_center_targets
 import tensorflow as tf
 from src import const
 import numpy as np
@@ -78,6 +78,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             # load images
             X_tar = cv2.imread(os.path.join(BASE_DATA_PATH, 'leftImg8bit', self.state, LOC, PREF + 'leftImg8bit' + '.png'), cv2.IMREAD_UNCHANGED)
             y_tar = {const.GT_KEY_SEMANTIC: cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
+            y_inst = get_center_targets(cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED))
             y_inst = cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED)
             y_inst = np.repeat(y_inst[:, :, np.newaxis], 3, axis=2)
 
@@ -91,10 +92,36 @@ class DataGenerator(tf.keras.utils.Sequence):
                 y_tar[const.GT_KEY_SEMANTIC] = self.gen.apply_transform(x=y_tar[const.GT_KEY_SEMANTIC], transform_parameters=params)
                 y_inst = self.gen.apply_transform(x=y_inst, transform_parameters=params)
             
-            # update targets
-            y_tar.update(get_centerpoints(y_inst))
+            y_tar.update(get_center_targets(y_inst[:, :, 1]))
             
             X[i,] = X_tar
             y[i] = y_tar
 
         return X, y
+
+if __name__ == '__main__':
+    from src.const import SEED_TRAIN, SEED_VAL, SEED_TEST, BASE_DATA_PATH, IMG_SIZE, N_CHANNELS, N_CLASSES, BATCH_SIZE
+    from tensorflow.keras.models import Sequential
+    from src.data_generator import DataGenerator
+    import glob
+    import os
+
+    partition = {'train': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'train', '*', '*color*')),
+                 'val': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'val', '*', '*color*')),
+                 'test': glob.glob(os.path.join(BASE_DATA_PATH, 'gtFine', 'test', '*', '*color*'))}
+
+    params = {'dim': IMG_SIZE,
+              'batch_size': BATCH_SIZE,
+              'n_classes': N_CLASSES,
+              'n_channels': N_CHANNELS,
+              'shuffle': True,
+              'augment': {'zoom_range': [5, 20],
+                          'random_flip': True}}
+
+    # Generators
+    training_generator = DataGenerator(partition['train'], state='train', seed=SEED_TRAIN, **params)
+    validation_generator = DataGenerator(partition['val'], state='val', seed=SEED_VAL, **params)
+    test_generator = DataGenerator(partition['test'], state='test', seed=SEED_TEST, **params)
+
+    print(training_generator.__getitem__(0)[0].shape)
+
