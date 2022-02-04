@@ -1,10 +1,11 @@
 from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from src.models import backbone_encoder, decoder, heads
 from tensorflow.keras import Input, Sequential, Model
+from src.models.loss import loss_panoptic 
 from ..const import IMG_SHAPE, EPOCHS
 import tensorflow as tf
-from src.models.loss import loss_panoptic 
 from tqdm import tqdm
+import mlflow
 import time
 
 def get_model(input_shape=None):
@@ -56,25 +57,39 @@ if __name__ == '__main__':
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001)
     model.compile(optimizer=optimizer, loss=loss_panoptic, metrics=["accuracy"])
 
-    start_time = time.time()
-    losses = []
-    for epoch in range(EPOCHS):
-      print(f'------- EPOCH {epoch + 1} -------')
-      for batch in tqdm(range(training_generator.__len__())):
-        X, y = training_generator.__getitem__(batch)
-        with tf.GradientTape() as tape:
-          seg_pred, kpt_pred, regr_pred = model(X, training=True)
-          y_pred = {}
-          y_pred.update(seg_pred)
-          y_pred.update(kpt_pred)
-          y_pred.update(regr_pred)
 
-          loss = loss_panoptic(y[batch], y_pred)
-          print(loss)
-          gradients = tape.gradient(loss, tape.watched_variables())
-          optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
-          losses.append(loss)
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+      try:
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+        logical_gpus = tf.config.list_logical_devices('GPU')
+        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
 
-        print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
-        .format(epoch + 1, (time.time() - start_time) / 60, loss)) 
+      except RuntimeError as e:
+        # Virtual devices must be set before GPUs have been initialized
+        print(e)
+
+    mlflow.tensorflow.autolog()
+    with mlflow.start_run():
+        start_time = time.time()
+        losses = []
+        for epoch in range(EPOCHS):
+          print(f'------- EPOCH {epoch + 1} -------')
+          for batch in tqdm(range(training_generator.__len__())):
+            X, y = training_generator.__getitem__(batch)
+            with tf.GradientTape() as tape:
+              seg_pred, kpt_pred, regr_pred = model(X, training=True)
+              y_pred = {}
+              y_pred.update(seg_pred)
+              y_pred.update(kpt_pred)
+              y_pred.update(regr_pred)
+
+              loss = loss_panoptic(y[batch], y_pred)
+              print(loss)
+              gradients = tape.gradient(loss, tape.watched_variables())
+              optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
+              losses.append(loss)
+
+          print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
+          .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - BATCH_SIZE])) 
 
