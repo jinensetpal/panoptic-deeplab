@@ -1,2 +1,7 @@
+[core]
+    remote = origin
+    autostage = true
 ['remote "origin"']
     url = https://dagshub.com/jinensetpal/panoptic-reproducibility.dvc
+['remote "temp"']
+    url = http://35.243.173.123:3000/jinensetpal/panoptic-reproducibility.dvc

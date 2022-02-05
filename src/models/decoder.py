@@ -1,6 +1,24 @@
-import tensorflow as tf 
+from src.models import utils, aspp, convolutions
+import tensorflow as tf
 
-import utils, aspp, convolutions
+
+def build_decoder(latent, skip, name):
+    l1 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(latent)
+
+    concat01 = layers.concatenate([l1, skip[1]], axis=-1)
+    l2 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(concat01)
+
+    concat02 = layers.concatenate([l2, skip[0]], axis=-1)
+    l3 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(concat02)
+
+    l4 = None # extending scope
+    if 'instance' in name:
+        l4 = layers.Conv2DTranspose(128, kernel_size=2, strides=(2, 2), activation='relu')(l3)
+    else:
+        l4 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(l3)
+
+    decoder = tf.keras.Model(inputs=[latent, skip], outputs=l4, name=name)
+    return decoder
 
 def get_decoder(name):
     return PanopticDeepLabSingleDecoder(high_level_feature_name='res5',
@@ -109,6 +127,8 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
       Refined features as instance of tf.Tensor.
     """
 
+#    features.update(more_features)
+
     high_level_features = features[self._high_level_feature_name]
     combined_features = self._aspp(high_level_features, training=training)
 
@@ -118,14 +138,14 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
           utils.get_low_level_conv_fusion_conv_current_names(i))
       # Iterate from the highest level of the low level features to the lowest
       # level, i.e. take the features with the smallest spatial size first.
-      low_level_features = features[self._low_level_feature_names[i]]
-      low_level_features = getattr(self, current_low_level_conv_name)(
-          low_level_features, training=training)
 
-      target_h = tf.shape(low_level_features)[1]
-      target_w = tf.shape(low_level_features)[2]
-      source_h = tf.shape(combined_features)[1]
-      source_w = tf.shape(combined_features)[2]
+      low_level_features = features[self._low_level_feature_names[i]]
+      low_level_features = getattr(self, current_low_level_conv_name)(low_level_features, training=training)
+
+      target_h = low_level_features.shape[1]
+      target_w = low_level_features.shape[2]
+      source_h = combined_features.shape[1]
+      source_w = combined_features.shape[2]
 
       tf.assert_less(
           source_h - 1,
@@ -159,3 +179,7 @@ class PanopticDeepLabSingleDecoder(layers.Layer):
 
   def get_pool_size(self):
     return self._aspp.get_pool_size()
+
+  def put_skip(self, res2, res3):
+      self._skip = {'res2':res2,
+                    'res3':res3}

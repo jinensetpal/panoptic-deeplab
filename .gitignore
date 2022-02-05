@@ -1,6 +1,10 @@
 *venv*/
-workbench/
 latex/
 *.zip
 .idea/
 .ipynb_checkpoints/
+__pycache__
+=*
+/data
+*.kate-swp
+/models

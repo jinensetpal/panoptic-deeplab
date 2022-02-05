@@ -24,9 +24,7 @@ Reference:
 from absl import logging
 import tensorflow as tf
 
-import utils
-import convolutions
-
+from src.models import utils, convolutions
 
 layers = tf.keras.layers
 backend = tf.keras.backend

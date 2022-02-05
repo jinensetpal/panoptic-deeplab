@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Input, Conv2D, SeparableConv2D, add, BatchNormalization, Activation, MaxPooling2D
 from tensorflow.keras import Model
-from keras.applications.xception import Xception
-from ..const.general_const import INPUT_SHAPE
+from tensorflow.keras.applications.xception import Xception
+from ..const import IMG_SHAPE
 
 
 def conv_bn(x, filters, kernel_size, strides=(1, 1), use_bias=True,
@@ -42,8 +42,8 @@ def block_1(input_layer):
 
     x = Activation('relu', name='block1_conv1_act')(x)
 
-    x = conv_bn(x, filters=64, kernel_size=(3, 3), use_bias=False,
-                block_num="1", conv_bn_num="2")
+    x = conv_bn(x, filters=64, kernel_size=(3, 3), strides=(1, 1), use_bias=False,
+                padding="same", block_num="1", conv_bn_num="2")
 
     x = Activation('relu', name='block1_conv2_act')(x)
 
@@ -128,27 +128,25 @@ def build_backbone(input_layer):
     residual = BatchNormalization()(residual)
 
     x = block_2(x)
-    x = add([x, residual])
+    res2 = add([x, residual])
 
-    residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res2)
     residual = BatchNormalization()(residual)
 
-    x = block_3(x)
-    x = add([x, residual])
+    x = block_3(res2)
+    res3 = add([x, residual])
 
-    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res3)
     residual = BatchNormalization()(residual)
 
-    x = block_4(x)
+    x = block_4(res3)
     x = add([x, residual])
 
     residual = x
-
     x = block_5(x)
-
     x = add([x, residual])
-
-    return x
+    
+    return x, res2, res3
 
 
 def set_xception_weights(layer_index, backbone_model, xception_model):
@@ -163,34 +161,34 @@ def set_xception_weights(layer_index, backbone_model, xception_model):
     backbone_model.get_layer(index=layer_index).set_weights(xception_model.get_layer(index=layer_index).get_weights())
     return backbone_model
 
-def create_backbone_model(input_shape=None):
+def create_backbone_model(inp=None):
     """
     Build a backbone model using the first 5 layers of Xception using it's pre-trained wights
 
     :param input_shape: list with 3 elements, the input shape for the backbone model
     :return: backbone model using the first 5 layers of Xception using pre-trained wights
     """
-    if input_shape is None:
-        input_shape = INPUT_SHAPE
-    input = Input(shape=input_shape)
-    x = build_backbone(input)
-    backbone_model = Model(input, x)
+    if inp is None:
+        inp = Input(shape=IMG_SHAPE)
 
-    xception_model = Xception(input_shape=input_shape, include_top=False, weights='imagenet')
+    x, res2, res3 = build_backbone(inp)
+    backbone_model = Model(inp, x)
+
+    xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
 
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
-    return backbone_model
+    return backbone_model, res2, res3, x
 
 if __name__ == '__main__':
 
-    input_shape = INPUT_SHAPE
-    input = Input(shape=input_shape)
-    x = build_backbone(input)
-    backbone_model = Model(input, x, name="backbone_model")
+    input_shape = IMG_SHAPE
+    input_layer = Input(shape=input_shape)
+    x = build_backbone(input_layer)
+    backbone_model = Model(input_layer, x, name="backbone_model")
 
-    xception_model = Xception(input_shape=INPUT_SHAPE, include_top=False, weights='imagenet')
+    xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
 
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)

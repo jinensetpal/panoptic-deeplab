@@ -2,14 +2,14 @@ from typing import Any, List, Mapping, Optional, Tuple
 import numpy as np
 import tensorflow as tf
 import src.common as common
-from coco_instance_ap import PanopticInstanceAveragePrecision
+from src.models.coco_instance_ap import PanopticInstanceAveragePrecision
 
 
 def get_metrics():
     metrics = [
         tf.keras.metrics.MeanIoU(common.NUM_CLASSES, 'IoU'),
-        PanopticQuality(common.NUM_CLASSES, 0, common.MAX_INSTANCE_PER_CATEGORY),
-        PanopticInstanceAveragePrecision(common.NUM_CLASSES, common.PANOPTIC_LABEL_DIVISOR, 0)
+        PanopticQuality(common.NUM_CLASSES, 0, common.MAX_INSTANCE_PER_CATEGORY, 0),
+        PanopticInstanceAveragePrecision(common.NUM_CLASSES, [], common.PANOPTIC_LABEL_DIVISOR, 0)
     ]
     return metrics
 
