@@ -1,0 +1,37 @@
+\section*{\centering Reproducibility Summary}
+\subsection*{Scope of Reproducibility}
+
+The original work by Cheng et al. \cite{Cheng2020PanopticDeepLabAS} introduces Panoptic-DeepLab - a novel architecture for panoptic segmentation, claiming to achieve comparable performance to two-stage, top down approaches while yielding fast inference speeds. At the time of publication, Panoptic-Deeplab claims to have ranked first in all three cityscapes benchmarks \textit{(specifically: mIoU, AP \& PQ)}.
+
+\subsection*{Methodology}
+
+As the original paper authors published their source code, our codebase integrates sections of their codebase, while re-implementing components intrinsic to the main claim we are attempting to evaluate. We also studied the source code, using information provided from it and the pipelines to augment our understanding from what the paper described.
+
+While we initially attempted a code-blind reproduction, it was soon determined to be unfeasible following which a hybrid approach was instantiated.
+
+% GPU-Hours, hardware, & other budget information here.
+
+\subsection*{Results}
+
+% Start with your overall conclusion --- where did your results reproduce the original paper, and where did your results differ? Be specific and use precise language, e.g. "we reproduced the accuracy to within 1\% off reported value, which supports the paper's conclusion that it outperforms the baselines". Getting exactly the same number is in most cases infeasible, so you'll need to use your judgement to decide if your results support the original claim of the paper.
+
+While we successfully reproduced the given architecture, we have been unable to train it. Therefore: our contributions currently remaining exclusive to architecture, and certain unit tests within the system itself. We also highlight potential low-level Tensorflow that were pitfalls to our development, that may be advantageous to investigate.
+
+\subsection*{What was easy}
+
+The authors of the paper structured their contributions on well-documented and tested frameworks such as ResNet and DeepLabV3+, while training on popular datasets such as Cityscapes and Mapillary Vistas. Consequently, setting up the dataset and the environment to reproduce the given research was straightforward.
+
+% Describe which parts of your reproduction study were easy. For example, was it easy to run the author's code, or easy to re-implement their method based on the description in the paper? The goal of this section is to summarize to a reader which parts of the original paper they could easily apply to their problem.
+
+\subsection*{What was difficult}
+
+A significant hurdle we came across during our reading of the paper was vagueness within the expected implementation. This extended from the architecture to the training regime. The descriptions provided, although accurate, were presented as a high-level overview, with the expectation of a lot of prior domain knowledge. This resulted in a significant time-sink, following which we looked into the codebase for necessitated context.
+
+Despite the well-structured objected oriented implementation through which the code was written, we found certain sections hard to understand. We observed convoluted re-implementations of high level functions already part of Tensorflow as part of the codebase. However, this could have been a direct result of the implementation not using the now-popularised Functional API within Tensorflow, which may have resulted in the required use of custom layers. % better language required here
+
+% potentially add experiments that couldn't be reproduced. 
+
+
+\subsection*{Communication with original authors}
+
+We communicated with the authors over e-mail, resolving doubts that arose while reading the paper. It is also through author communication that we were directed to the codebase, as although public - the relevant repository wasn't mentioned within the paper.
