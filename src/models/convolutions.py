@@ -24,7 +24,7 @@ rate. It also has optional pre- and post-global context layers.
 import functools
 from typing import Optional
 import tensorflow as tf
-from src.models import utils, activations
+from src.models import utils 
 
 
 def _compute_padding_size(kernel_size, atrous_rate):
@@ -36,126 +36,6 @@ def _compute_padding_size(kernel_size, atrous_rate):
         print('Convolution requires one more padding to the '
                      'bottom-right pixel. This may cause misalignment.')
     return pad_begin, pad_end
-
-
-class GlobalContext(tf.keras.layers.Layer):
-    """Class for the global context modules in Switchable Atrous Convolution."""
-
-    def build(self, input_shape):
-        super().build(input_shape)
-        input_shape = tf.TensorShape(input_shape)
-        input_channel = self._get_input_channel(input_shape)
-        self.global_average_pooling = tf.keras.layers.GlobalAveragePooling2D()
-        self.convolution = tf.keras.layers.Conv2D(
-            input_channel, 1, strides=1, padding='same', name=self.name + '_conv',
-            kernel_initializer='zeros', bias_initializer='zeros')
-
-    def call(self, inputs, *args, **kwargs):
-        outputs = self.global_average_pooling(inputs)
-        outputs = tf.expand_dims(outputs, axis=1)
-        outputs = tf.expand_dims(outputs, axis=1)
-        outputs = self.convolution(outputs)
-        return inputs + outputs
-
-    def _get_input_channel(self, input_shape):
-        # Reference: tf.keras.layers.convolutional.Conv.
-        if input_shape.dims[-1].value is None:
-            raise ValueError('The channel dimension of the inputs '
-                             'should be defined. Found `None`.')
-        return int(input_shape[-1])
-
-
-class SwitchableAtrousConvolution(tf.keras.layers.Conv2D):
-    """Class for the Switchable Atrous Convolution."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._average_pool = tf.keras.layers.AveragePooling2D(
-            pool_size=(5, 5), strides=1, padding='same')
-        self._switch = tf.keras.layers.Conv2D(
-            1,
-            kernel_size=1,
-            strides=self.strides,
-            padding='same',
-            dilation_rate=1,
-            name='switch',
-            kernel_initializer='zeros',
-            bias_initializer='zeros')
-
-    def build(self, input_shape):
-        super().build(input_shape)
-        if self.padding == 'causal':
-            tf_padding = 'VALID'
-        elif isinstance(self.padding, str):
-            tf_padding = self.padding.upper()
-        else:
-            tf_padding = self.padding
-        large_dilation_rate = list(self.dilation_rate)
-        large_dilation_rate = [r * 3 for r in large_dilation_rate]
-        self._large_convolution_op = functools.partial(
-            tf.nn.convolution,
-            strides=list(self.strides),
-            padding=tf_padding,
-            dilations=large_dilation_rate,
-            data_format=self._tf_data_format,
-            name=self.__class__.__name__ + '_large')
-
-    def call(self, inputs):
-        # Reference: tf.keras.layers.convolutional.Conv.
-        input_shape = inputs.shape
-        switches = self._switch(self._average_pool(inputs))
-
-        if self._is_causal:  # Apply causal padding to inputs for Conv1D.
-            inputs = tf.compat.v1.pad(inputs, self._compute_causal_padding(inputs))
-
-        outputs = self._convolution_op(inputs, self.kernel)
-        outputs_large = self._large_convolution_op(inputs, self.kernel)
-
-        outputs = switches * outputs_large + (1 - switches) * outputs
-
-        if self.use_bias:
-            outputs = tf.nn.bias_add(
-                outputs, self.bias, data_format=self._tf_data_format)
-
-        if not tf.executing_eagerly():
-            # Infer the static output shape:
-            out_shape = self.compute_output_shape(input_shape)
-            outputs.set_shape(out_shape)
-
-        if self.activation is not None:
-            return self.activation(outputs)
-        return outputs
-
-    def squeeze_batch_dims(self, inp, op, inner_rank):
-        # Reference: tf.keras.utils.conv_utils.squeeze_batch_dims.
-        with tf.name_scope('squeeze_batch_dims'):
-            shape = inp.shape
-
-            inner_shape = shape[-inner_rank:]
-            if not inner_shape.is_fully_defined():
-                inner_shape = tf.compat.v1.shape(inp)[-inner_rank:]
-
-            batch_shape = shape[:-inner_rank]
-            if not batch_shape.is_fully_defined():
-                batch_shape = tf.compat.v1.shape(inp)[:-inner_rank]
-
-            if isinstance(inner_shape, tf.TensorShape):
-                inp_reshaped = tf.reshape(inp, [-1] + inner_shape.as_list())
-            else:
-                inp_reshaped = tf.reshape(
-                    inp, tf.concat(([-1], inner_shape), axis=-1))
-
-            out_reshaped = op(inp_reshaped)
-
-            out_inner_shape = out_reshaped.shape[-inner_rank:]
-            if not out_inner_shape.is_fully_defined():
-                out_inner_shape = tf.compat.v1.shape(out_reshaped)[-inner_rank:]
-
-            out = tf.reshape(
-                out_reshaped, tf.concat((batch_shape, out_inner_shape), axis=-1))
-
-            out.set_shape(inp.shape[:-inner_rank] + out.shape[-inner_rank:])
-            return out
 
 
 class Conv2DSame(tf.keras.layers.Layer):
@@ -257,7 +137,7 @@ class Conv2DSame(tf.keras.layers.Layer):
 
         self._activation_fn = None
         if activation is not None:
-            self._activation_fn = activations.get_activation(activation)
+            self._activation_fn = tf.keras.activations.get(activation)
 
         self._use_global_context_in_sac = use_global_context_in_sac
         self._strides = strides
@@ -357,7 +237,7 @@ class DepthwiseConv2DSame(tf.keras.layers.Layer):
 
         self._activation_fn = None
         if activation is not None:
-            self._activation_fn = activations.get_activation(activation)
+            self._activation_fn = tf.keras.activations.get(activation)
 
         self._strides = strides
         self._use_bn = use_bn
@@ -557,106 +437,4 @@ class StackedConv2DSame(tf.keras.layers.Layer):
             current_name = utils.get_conv_bn_act_current_name(index, self._use_bn,
                                                               self._activation)
             x = getattr(self, current_name)(x, training=training)
-        return x
-
-
-class Conv1D(tf.keras.layers.Layer):
-    """A wrapper class for a 1D convolution with batch norm and activation.
-
-    Conv1D creates a convolution kernel that is convolved with the layer input
-    over a single spatial (or temporal) dimension to produce a tensor of outputs.
-    The input should always be 3D with shape [batch, length, channel], so
-    accordingly, the optional batch norm is done on axis=2.
-
-    In DeepLab, we use Conv1D only with kernel_size = 1 for dual path transformer
-    layers in MaX-DeepLab [1] architectures.
-
-    Reference:
-    [1] MaX-DeepLab: End-to-End Panoptic Segmentation with Mask Transformers,
-        CVPR 2021.
-          Huiyu Wang, Yukun Zhu, Hartwig Adam, Alan Yuille, Liang-Chieh Chen.
-    """
-
-    def __init__(
-            self,
-            output_channels: int,
-            name: str,
-            use_bias: bool = True,
-            use_bn: bool = False,
-            bn_layer: tf.keras.layers.Layer = tf.keras.layers.BatchNormalization,
-            bn_gamma_initializer: str = 'ones',
-            activation: Optional[str] = None,
-            conv_kernel_weight_decay: float = 0.0,
-            kernel_initializer='he_normal',
-            kernel_size: int = 1,
-            padding: str = 'valid'):
-        """Initializes a Conv1D.
-
-        Args:
-          output_channels: An integer specifying the number of filters of the
-            convolution.
-          name: A string specifying the name of this layer.
-          use_bias: An optional flag specifying whether bias should be added for the
-            convolution.
-          use_bn: An optional flag specifying whether batch normalization should be
-            added after the convolution (default: False).
-          bn_layer: An optional tf.keras.layers.Layer that computes the
-            normalization (default: tf.keras.layers.BatchNormalization).
-          bn_gamma_initializer: An initializer for the batch norm gamma weight.
-          activation: An optional flag specifying an activation function to be added
-            after the convolution.
-          conv_kernel_weight_decay: A float, the weight decay for convolution
-            kernels.
-          kernel_initializer: An initializer for the convolution kernel.
-          kernel_size: An integer specifying the size of the convolution kernel.
-          padding: An optional string specifying the padding to use. Must be either
-            'same' or 'valid' (default: 'valid').
-
-        Raises:
-          ValueError: If use_bias and use_bn in the convolution.
-        """
-        super(Conv1D, self).__init__(name=name)
-
-        if use_bn and use_bias:
-            raise ValueError('Conv1D is using convlution bias with batch_norm.')
-
-        self._conv = tf.keras.layers.Conv1D(
-            output_channels,
-            kernel_size=kernel_size,
-            strides=1,
-            padding=padding,
-            use_bias=use_bias,
-            name='conv',
-            kernel_initializer=kernel_initializer,
-            kernel_regularizer=tf.keras.regularizers.l2(
-                conv_kernel_weight_decay))
-
-        self._batch_norm = None
-        if use_bn:
-            # Batch norm uses axis=2 because the input is 3D with channel being the
-            # last dimension.
-            self._batch_norm = bn_layer(axis=2, name='batch_norm',
-                                        gamma_initializer=bn_gamma_initializer)
-
-        self._activation_fn = None
-        if activation is not None:
-            self._activation_fn = activations.get_activation(activation)
-
-    def call(self, input_tensor, training=False):
-        """Performs a forward pass.
-
-        Args:
-          input_tensor: An input tensor of type tf.Tensor with shape [batch, length,
-            channels].
-          training: A boolean flag indicating whether training behavior should be
-            used (default: False).
-
-        Returns:
-          The output tensor.
-        """
-        x = self._conv(input_tensor)
-        if self._batch_norm is not None:
-            x = self._batch_norm(x, training=training)
-        if self._activation_fn is not None:
-            x = self._activation_fn(x)
         return x
