@@ -24,18 +24,18 @@ Reference:
 from absl import logging
 import tensorflow as tf
 
-from src.models import utils, convolutions
+from src.models import convolutions
 
 layers = tf.keras.layers
 backend = tf.keras.backend
 
-
-def get_aspp():
-    return ASPP(
-        output_channels=256,
-        name='ASPP',
-        atrous_rates=[6, 12, 18])
-
+def get_aspp(latent,
+        name='aspp'):
+    aspp = ASPP(output_channels=256,
+            name='ASPP',
+            atrous_rates=[6, 12, 18])(latent)
+    model = tf.keras.Model(inputs=latent, outputs=aspp, name=name)
+    return model
 
 class ASPPConv(tf.keras.layers.Layer):
   """An atrous convolution for ASPP."""
@@ -174,9 +174,12 @@ class ASPPPool(tf.keras.layers.Layer):
     target_h = tf.shape(input_tensor)[1]
     target_w = tf.shape(input_tensor)[2]
 
-    x = utils.resize_align_corners(x, [target_h, target_w])
+    x = tf.compat.v1.image.resize(x,
+            [target_h, target_w],
+            method=tf.compat.v1.image.ResizeMethod.BILINEAR,
+            align_corners=True,
+            name='resize_align_corners')
     return x
-
 
 class ASPP(tf.keras.layers.Layer):
   """An atrous spatial pyramid pooling layer."""
@@ -224,25 +227,27 @@ class ASPP(tf.keras.layers.Layer):
         activation='relu')
 
     if not aspp_use_only_1x1_proj_conv:
-      self._conv_bn_act = convolutions.Conv2DSame(
-          output_channels,
-          kernel_size=1,
-          name='conv_bn_act',
-          use_bias=False,
-          use_bn=True,
-          bn_layer=bn_layer,
-          activation='relu')
-      rate1, rate2, rate3 = atrous_rates
-      self._aspp_conv1 = ASPPConv(output_channels, rate1, name='aspp_conv1',
-                                  bn_layer=bn_layer)
-      self._aspp_conv2 = ASPPConv(output_channels, rate2, name='aspp_conv2',
-                                  bn_layer=bn_layer)
-      self._aspp_conv3 = ASPPConv(output_channels, rate3, name='aspp_conv3',
-                                  bn_layer=bn_layer)
-      self._aspp_pool = ASPPPool(output_channels, name='aspp_pool',
-                                 bn_layer=bn_layer)
-      # Dropout is needed only when ASPP five branches are used.
-      self._proj_drop = layers.Dropout(rate=0.1)
+        self._conv_bn_act = convolutions.Conv2DSame(
+        output_channels,
+        kernel_size=1,
+        name='conv_bn_act',
+        use_bias=False,
+        use_bn=True,
+        bn_layer=bn_layer,
+        activation='relu')
+
+     
+    rate1, rate2, rate3 = atrous_rates 
+    self._aspp_conv1 = ASPPConv(output_channels, rate1, name='aspp_conv1',
+                                bn_layer=bn_layer)
+    self._aspp_conv2 = ASPPConv(output_channels, rate2, name='aspp_conv2',
+                                bn_layer=bn_layer)
+    self._aspp_conv3 = ASPPConv(output_channels, rate3, name='aspp_conv3',
+                                bn_layer=bn_layer)
+    self._aspp_pool = ASPPPool(output_channels, name='aspp_pool',
+                               bn_layer=bn_layer)
+    # Dropout is needed only when ASPP five branches are used.
+    self._proj_drop = layers.Dropout(rate=0.1)
 
   def set_pool_size(self, pool_size):
     """Sets the pooling size of the ASPP pooling layer.

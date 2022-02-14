@@ -24,8 +24,6 @@ rate. It also has optional pre- and post-global context layers.
 import functools
 from typing import Optional
 import tensorflow as tf
-from src.models import utils 
-
 
 def _compute_padding_size(kernel_size, atrous_rate):
     kernel_size_effective = kernel_size + (kernel_size - 1) * (atrous_rate - 1)
@@ -404,12 +402,12 @@ class StackedConv2DSame(tf.keras.layers.Layer):
             raise ValueError('Convolution %s not supported.' % conv_type)
 
         for index in range(num_layers):
-            current_name = utils.get_conv_bn_act_current_name(index, use_bn,
-                                                              activation)
-            utils.safe_setattr(self, current_name, convolution_op(
+            current_name = get_conv_bn_act_current_name(index, use_bn,
+                                                        activation)
+            setattr(self, current_name, convolution_op(
                 output_channels=output_channels,
                 kernel_size=kernel_size,
-                name=utils.get_layer_name(current_name),
+                name=current_name[1:],
                 strides=strides,
                 atrous_rate=atrous_rate,
                 use_bias=use_bias,
@@ -434,7 +432,17 @@ class StackedConv2DSame(tf.keras.layers.Layer):
         """
         x = input_tensor
         for index in range(self._num_layers):
-            current_name = utils.get_conv_bn_act_current_name(index, self._use_bn,
-                                                              self._activation)
+            current_name = get_conv_bn_act_current_name(index, self._use_bn,
+                                                        self._activation)
             x = getattr(self, current_name)(x, training=training)
         return x
+
+def get_conv_bn_act_current_name(index, use_bn, activation):
+    name = '_conv{}'.format(index + 1)
+    if use_bn:
+        name += '_bn'
+    if (activation is not None and
+            activation.lower() != 'none' and
+            activation.lower() != 'linear'):
+        name += '_act'
+    return name

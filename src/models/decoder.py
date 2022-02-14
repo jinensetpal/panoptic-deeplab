@@ -1,7 +1,6 @@
 from tensorflow.keras import layers 
 import tensorflow as tf
 
-
 def build_decoder(latent, skip, name):
     l1 = layers.Conv2DTranspose(256, kernel_size=2, strides=(2, 2), activation='relu')(latent)
 
