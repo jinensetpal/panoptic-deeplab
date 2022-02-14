@@ -5,7 +5,7 @@ IMG_SIZE = (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
-EPOCHS = 2
+EPOCHS = 1 
 
 CLASS_MODE = 'categorical'
 EPOCHS = 20

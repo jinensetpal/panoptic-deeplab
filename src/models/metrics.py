@@ -2,8 +2,6 @@ from typing import Any, List, Mapping, Optional, Tuple
 import numpy as np
 import tensorflow as tf
 import src.common as common
-from src.models.coco_instance_ap import PanopticInstanceAveragePrecision
-
 
 def get_metrics():
     metrics = [
@@ -18,6 +16,58 @@ def _ids_to_counts(id_array: np.ndarray) -> Mapping[int, int]:
     """Given a numpy array, a mapping from each unique entry to its count."""
     ids, counts = np.unique(id_array, return_counts=True)
     return dict(zip(ids, counts))
+
+
+class PanopticInstanceAveragePrecision(tf.keras.metrics.Metric):
+    """Computes instance segmentation AP of panoptic segmentations.
+
+    Panoptic segmentation includes both "thing" and "stuff" classes. This class
+    ignores the "stuff" classes to report metrics on only the "thing" classes
+    that have discrete instances. It computes a series of AP-based metrics using
+    the COCO evaluation scripts.
+    """
+
+    def __init__(self,
+                 num_classes: int,
+                 things_list: Collection[int],
+                 label_divisor: int,
+                 ignored_label: int,
+                 name: str = 'panoptic_instance_ap',
+                 **kwargs):
+        """Constructs panoptic instance segmentation evaluation class."""
+        super(PanopticInstanceAveragePrecision, self).__init__(name=name, **kwargs)
+        self.num_classes = num_classes
+        self.stuff_list = set(range(num_classes)).difference(things_list)
+        self.label_divisor = label_divisor
+        self.ignored_label = ignored_label
+        self.detection_metric = InstanceAveragePrecision()
+        self.reset_states()
+
+    def reset_states(self) -> None:
+        self.detection_metric.reset_states()
+
+    def result(self) -> np.ndarray:
+        return self.detection_metric.result()
+
+    def update_state(self,
+                     groundtruth_panoptic: tf.Tensor,
+                     predicted_panoptic: tf.Tensor,
+                     semantic_probability: tf.Tensor,
+                     instance_score_map: tf.Tensor,
+                     is_crowd_map: Optional[tf.Tensor] = None) -> None:
+        """Adds the results from a new image to be computed by the metric.
+
+        Args:
+          groundtruth_panoptic: A 2D integer tensor, with the true panoptic label at
+            each pixel.
+          predicted_panoptic: 2D integer tensor with predicted panoptic labels to be
+            evaluated.
+          semantic_probability: An float tensor of shape `[image_height,
+            image_width, num_classes]`. Specifies at each pixel the estimated
+            probability distribution that that pixel belongs to each semantic class.
+          instance_score_map: A 2D float tensor, where the pixels for an instance
+            will have the probability of that being an instance.
+          is_crowd_map: A 2D boolean tensor. Where it is True, the instance in that
 
 
 class PanopticQuality(tf.keras.metrics.Metric):
@@ -249,3 +299,4 @@ class PanopticQuality(tf.keras.metrics.Metric):
         }
         base_config = super(PanopticQuality, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+

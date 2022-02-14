@@ -1,0 +1,186 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2019
+
+% ready for submission
+% \usepackage{neurips_2019}
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2019}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+\usepackage[nonatbib]{neurips_2019}
+
+% to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{neurips_2019}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{biblatex}
+\addbibresource{reproducibility/references.bib}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage[normalem]{ulem}
+\newif{\ifhidecomments}
+
+\title{[Re] Panoptic-DeepLab: A Simple, Strong, and Fast Baseline for Bottom-Up Panoptic Segmentation}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+\author{%
+  David S.~Hippocampus\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  Cranberry-Lemon University\\
+  Pittsburgh, PA 15213 \\
+  \texttt{hippo@cs.cranberry-lemon.edu} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+% \addbibresource{references.bib}
+\begin{document}
+
+\maketitle
+
+\label{sec:summary}
+\input{reproducibility/summary}
+
+\newpage
+\section{Introduction}
+Since it's inception in 2018, Panoptic Segmentation\cite{Kirillov2019PanopticS} has remained a popular task within the domain of computer vision. It is in effect the unification of two distinct yet related tasks, namely: semantic and instance segmentation. Semantic segmentation broadly involves the assignment of a class ID to every input pixel, whereas instance segmentation is the delineation of distinct objects within an input frame. Broadly classified as ``stuff'' and ``things'', the unification of the two produces the target output known as Panoptic Segmentation.
+
+Panoptic-Deeplab\cite{Cheng2020PanopticDeepLabAS} aims to establish a strong baseline for a bottom-up approach to the task. Consequently, it places a focus on simplicity, cleverly incorporating established components within neural architecture to set state-of-art benchmarks as of the date of publication. 
+
+\section{Scope of reproducibility}
+\label{sec:claims}
+We investigate the following claims from the original paper: % complete with results
+\begin{itemize}
+    \item Panoptic-DeepLab establishes a solid baseline for bottom-up methods that can achieve comparable performance of two-stage methods while yielding fast inference speed - nearly real-time on the MobileNetV3 backbone. 
+    \item Single Panoptic-DeepLab simultaneously ranks first (at the time of publication) at all three Cityscapes benchmarks, setting the new state-of-art of $84.2\%$ mIoU, $39.0\%$ AP, and $65.5\%$ PQ on test set.
+\end{itemize}
+
+
+\section{Methodology}
+Initially, we attempted a code-blind reproduction of Panoptic-DeepLab. However, we swiftly determined it to be unfeasible - primarily as a result of us being unable to fully grasp implementation details from the paper itself. The paper does incredibly well to provide a high level explanation of how the architecture functions; unfortunately, the lack of implementation-specific information prevented a blind-paper reproduction without extensive interpolation. Crucially: we note the importance of a standardized system for presenting architecture diagram. While the current abstract layers look nicer, we find they lack important information necessary to reproduction.
+
+It is important to note here that upon re-reading the paper post implementation - with a prior understanding of the architecture - we found that just the paper did very well to explain the architecture, enough even, for a code-blind reproduction. Going through long-expired threads of discussion was an exercise that did well to remind us of implicit interpolations we made, having already known the architecture. 
+
+\subsection{Model description}
+Panoptic-DeepLab\cite{Cheng2020PanopticDeepLabAS} incorporates an encoder-decoder architecture to generate target inference, with our implementation encapsulating $6,547,894$ total parameters, of which $6,534,998$ are trainable, while the remaining $12,896$ are non-trainable. Broadly - it sequentially incorporates the modules discussed in the following subsections.
+
+\subsubsection{Image DataGenerator}
+To the extent of our understanding, Panoptic-Deeplab\cite{Cheng2020PanopticDeepLabAS} did not discuss the implementation of its dataset loaders. As a result, we entirely used a custom implementation of Tensorflow's ImageDataGenerator\cite{afshinea} class, to function as an iterator for the training regime. Since we did not find it highlighted within the paper to generate ground-truth center heatmaps and centerpoint predictions, we discuss this in the following paragraph.
+
+\paragraph{Center Heatmaps \& Prediction\cite{Tompson2014JointTO}} The center heatmaps \& prediction maps are representations of the ground truth instance ID images. These images are effective data representations of instances within the frame. Each `thing' has an encoded value, for instance: each pixel representing car\#1 may be labeled $10001$, while car\#2 is labelled $10002$. The first two digits encode one of the 19 different objects tracked by Cityscapes - in this case, the car - while the final three digits refer to the instance of the given object. The representation in specific are the computed averages of each of the instances - producing the center prediction. The center heatmaps are a gaussian distribution applied over the centerpoint predictions with $standard\ deviation = 8px$. 
+
+\subsubsection{Encoder}
+Panoptic-DeepLab is trained on three popular encoder ImageNet pre-trained backbones, namely: Xception-71\cite{Chollet2017XceptionDL}, ResNet-50\cite{He2016DeepRL} \& MobileNetV3\cite{Howard2017MobileNetsEC}. The backbone works to generate feature maps from input images. For the purpose of this reproduction, we use Xception-71 as our encoder backbone, as this is the primary implementation used by the original authors. We integrate our own implementation of the Xception-71 module as part of the paper reproduction.
+
+\subsubsection{Atrous Spatial Pyramid Pooling}
+From the encoder, the feature maps are split into dual modules. The first layer to run the decoupled modules is Atrous Spatial Pyramid Pooling\cite{Chen2018DeepLabSI}, abbreviated - ASPP, is a module that concurrently resamples encoded feature layers at different rates, finally pooled together to capture objects and relevant context at multiple scales.
+
+We derived the ASPP block directly from the tensorflow implementation maintained by the paper authors, with no modifications made to the architecture.
+
+\subsubsection{Decoder}
+Panoptic-DeepLab is a fork of the DeepLabV3+\cite{Chen2018DeepLabSI} decoder architecture. It incorporates two fundamental contributions, specifically: an additional skip connection in the upsampling stage, and an additional upsampling layer with \texttt{output stride = 8}. We developed a custom implementation of this utilizing the modern Keras Functional\cite{bisong2019tensorflow} API. Through our development of the decoder, we ran into a prominent problem, that delayed significantly our progress within model architecture. This is in direct correlation with how Tensorflow handles internal API calls, type conversion. 
+
+\paragraph{tf.Tensor v KerasTensor} \texttt{KerasTensor} is an internal class within the Keras API. It is generated during layer definition, during the construction of a neural architecture. When latent features are passed during the function calls, the \texttt{KerasTensor} object is converted implicitly to the \texttt{tf.Tensor} format - covering up significant type discrepancies. As part of testing the original Panoptic-Deeplab code, we evaluated that as part of the model conversion to the Functional API, it was unable to retrace inputs to the decoder. This resulted in a Graph Disconnected error. In an attempt to allow traceback to work, we devised an approach wherein skip connections were made instance variables within the Decoder class, and passed separately to the functional call. It is here that we discovered that the lack of the implicit type conversion, while transferring precisely the same set of data resulted in a TypeError. We were unable to manually make the necessary conversion, highlighting a lack of documentation as \texttt{KerasTensor} is a backend class. Consequently, we were unable to patch the approach and proceeded to a full rewrite.
+
+\paragraph{Graph Disconnected} An error we struggled to get past - the Graph Disconnected error is thrown when the traceback method within the functional API is unable to generate the necessary I/O graph to create a valid architecture. While in retrospect: the information provided was enough to debug effectively the point of failure, we would like to highlight that we believe a more visual or verbose representation - for instance, a plot describing the graph upto the point of failure - may allow the quicker \& clearer identification of the issue. 
+
+\subsubsection{Prediction Heads}
+The decoupled decoder modules further split into three separate prediction heads. These generate the final deep-learning based output within our implementation. They are a final set of convolutional followed by fully connected layers generating the final result.
+
+Similar to ASPP\cite{Chen2018DeepLabSI}, we derived prediction heads directly from the tensorflow implementation maintained by the paper authors, with no modifications made to the architecture.
+
+\subsubsection{Loss Function}
+Panoptic-DeepLab employs a collective loss function intended to train resultant outputs.
+$$L = \lambda_{sem}L_{sem} + \lambda_{heatmap}L_{heatmap} + \lambda_{offset}L_{offset}$$
+
+This was a straightforward function, the implementation of which was just as straightforward, and did not require any effort above the requisite minimum.
+
+\subsubsection{Post Processing}
+Post processing of the outputs heads in effect involves stitching the instance and semantic segmentation outputs via a majority vote, generating the final panoptic segmentation. Since output post processing involves a traditional script with no trainable parameters, we have used post-processing code directly from the original tensorflow implementation, as put forward by the authors of the paper.
+
+\subsection{Datasets}
+Panoptic-DeepLab used Cityscapes\cite{Cordts2016TheCD}, Mapillary Vistas\cite{Neuhold2017TheMV} \& COCO\cite{Lin2014MicrosoftCC} datasets over the proposed architecture. For the purpose of our implementation, we train our model on the Cityscapes dataset, as examples are referenced from it through the evaluation stages of the model. Each image is of size $(1025, 2049)$, and utilizes an odd crop size to allow centering, aligning features across spatial resolutions.
+
+\subsection{Hyperparameters}
+Panoptic-DeepLab uses a training protocol similar to that of the original DeepLab, specifically: the `poly' learning rate policy. It uses the \texttt{Adam} optimizer with a learning rate of $0.001$ without weight decay, with fine-tuned batch normalization parameters and random scale data augmentation. While we prepared our re-implementation with the same set of hyperparameters, we were unable to validate our approach, further discussed in Section \ref{sec:compute}.
+% to be added post implementation 
+
+\subsection{Experimental setup and code}
+Alongside git for code tracking, we also employ data science specific tools such as DVC (Data Version Control) and MLFlow\cite{Chen2020DevelopmentsIM} with DAGsHub as the platform operating the relevant stack of services. DVC requires S3 buckets, that maintain the dataset, models, visualization and high storage binaries utilized during training. MLFlow - specifically, MLFlow tracking was the service we utilized as part of documenting the training lifecycle, including experimentation, and the relevant comparison between training cycles.
+
+\subsection{Computational requirements}
+\label{sec:compute}
+By an astronomical margin, the computational requirements necessary for training Panoptic-DeepLab was the factor that prevented us from successfully testing our target reproduction. Originally, the architecture was trained on a cluster of \textit{32 TPUs}. In a technical report that detailed a PyTorch re-implementation of Panoptic-DeepLab, they coupled runtime optimization techniques alongside smaller batch size to reduce the training size to \textit{4-8 GPUs}. While a significant improvement, we find that stating it enables `everyone be able to reproduce state-of-the-art results with limited resources' a vast extension.
+
+The computational stack under active access to our team includes a single GPU on a docker container, personal workstations as well as any GPUs provisioned by cloud notebook service \textit{Google Colaboratory}. Even considering the use of cloud compute services such as \textit{AWS} - that are estimated to cost upwards of $2,000$ USD - for the acquisition of necessary compute, it is not possible to acquire access to the high performance GPU-enabled G3 instances without explicit approval from AWS customer support. Through a back-and-forth that extended across weeks, we have been unable to acquire the approval necessary to create stated instances.
+
+We therefore attempted the utilization of CPU resources to train the model to the best of our ability. We theorized the use of high learning rates in an attempt to overfit the model in a single epoch as a sanity check; to ensure the pipeline for our re-implementation worked as intended. Predictably, the training failed, and python was killed as the memory usage exceeded the cap permitted by the system, causing it to crash.
+
+\section{Results}
+\label{sec:results}
+
+As a result of the scenario detailed in the previous section: while we did manage to reproduce the architecture, we have been - as of now - unable to train it. Therefore, to this degree, our reproduction has not been a success, with our contributions currently remaining exclusive to architecture and the challenges encountered by us through our reproduction of the paper.
+
+\section{Discussion}
+Through the constant cycle of updates across which the languages on which neural architectures are written, the Reproducibility Challenge presents the fantastic opportunity to (1) take a step back, and (2) re-approach a pre-existing codebases with an entirely different perspective. It allows us the opportunity to fine-tune both past research and research in the near future. The insights our team has generated from our work on Panoptic-DeepLab itself, has done immensely to broaden our own perspective on the state of our field at the moment.
+
+\subsection{What was easy}
+The authors of the paper structured their contributions on well-documented frameworks such as ResNet and DeepLabV3+, while training on popular datasets such as Cityscapes and Mapillary Vistas. Consequently, setting up the dataset and the environment to reproduce the given research was straightforward.
+
+Additionally, various modules within the architecture were concisely and concretely defined - which enabled us to re-implement them without additional effort, above the minimum requisite. We found several sections of the paper were written with meticulous detail, and we especially appreciated the exhaustive, vast array of experiments and benchmarks provided as part of the research, which led our primary motivations towards attempting the reproduction.
+
+\subsection{What was difficult}
+A significant hurdle we came across during our reading of the paper was vagueness within the expected implementation. This extended from the architecture to the training regime. The descriptions provided, although accurate, were presented as a high-level overview, with the expectation of a lot of prior domain knowledge. This resulted in a significant time-sink, following which we looked into the codebase for necessitated context.
+
+Despite the well-structured objected oriented implementation through which the code was written, we found certain sections hard to understand. We observed convoluted re-implementations of high level functions already part of Tensorflow as part of the codebase. However, this could have been a direct result of the implementation not using the now-popularised Functional API within Tensorflow, which may have resulted in the required use of custom layers. % better language required here
+
+Additionally, we would also like to highlight the importance of excessive computational requirements within the machine learning space, and it's relation to the reproducibility of a paper. With the exploding costs of GPUs owing to extensive crypto-mining farms\cite{Wilson2021GPUPA}, and the ever increasing complexity of models being trained over time, it is imperative to consider designing systems that adhere to development policies ranging beyond the best-funded labs, and represents an important milestone within the democratization of research within high-throughput deep learning.
+
+\subsection{Communication with original authors}
+
+We enjoyed minimal yet significant communication with the original authors of the research. We communicated over e-mail, resolving doubts we came across as we read the paper. We found valuable insight through this communication, which has consequently been imperative to the success of our project. It has enabled discovering an additional suite of supplementary literature written with respect to the target architecture, which we may have potentially been unable to find without significant delay.
+
+% \section*{References}
+\printbibliography
+
+\end{document}

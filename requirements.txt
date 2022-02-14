@@ -58,10 +58,7 @@ rsa==4.8
 scipy==1.7.3
 six==1.16.0
 stack-data==0.1.4
-tensorboard==2.8.0
-tensorboard-data-server==0.6.1
-tensorboard-plugin-wit==1.8.1
-tensorflow==2.8.0rc0
+tensorflow==2.8.0
 tensorflow-io-gcs-filesystem==0.23.1
 termcolor==1.1.0
 tf-estimator-nightly==2.8.0.dev2021122109
