@@ -89,7 +89,7 @@ if __name__ == '__main__':
               optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
               losses.append(loss)
 
+          model.save(os.path.join(BASE_DIR, 'models', 'panoptic-deeplab'))
           print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
           .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - BATCH_SIZE])) 
-    model.save(os.path.join(BASE_DIR, 'models', 'panoptic-deeplab'))
 
