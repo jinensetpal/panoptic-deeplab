@@ -1,8 +1,7 @@
-from tensorflow.python.keras.engine.keras_tensor import KerasTensor
-from src.models import backbone_encoder, decoder, heads, aspp
-from tensorflow.keras import Input, Sequential, Model
+from src.models import encoder, decoder, heads, aspp
+from tensorflow.keras import Input, Model
 from src.models.loss import loss_panoptic 
-from ..const import IMG_SHAPE, EPOCHS
+from ..const import IMG_SHAPE
 import tensorflow as tf
 from tqdm import tqdm
 import mlflow
@@ -13,7 +12,7 @@ def get_model(input_shape=None):
         input_shape = IMG_SHAPE
 
     inp = Input(shape=input_shape)
-    backbone, res2, res3, latent_out = backbone_encoder.create_backbone_model(inp)
+    backbone, res2, res3, latent_out = encoder.create_backbone_model(inp)
 
     sem_aspp, inst_aspp = aspp.get_aspp(latent_out, name='semantic_aspp'), aspp.get_aspp(latent_out, name='instance_aspp')
     sem_decoder, inst_decoder = decoder.build_decoder(sem_aspp.output, [res2, res3], 'semantic_decoder'), decoder.build_decoder(inst_aspp.output, [res2, res3], 'instance_decoder')
@@ -28,8 +27,8 @@ def get_model(input_shape=None):
     return model
 
 if __name__ == '__main__':
-    from src.const import SEED_TRAIN, SEED_VAL, SEED_TEST, BASE_DATA_PATH, IMG_SIZE, N_CHANNELS, N_CLASSES, BATCH_SIZE
-    from tensorflow.keras.models import Sequential
+    ## imports under __main__ function to avoid circular imports
+    from src.const import SEED_TRAIN, SEED_VAL, SEED_TEST, BASE_DATA_PATH, IMG_SIZE, N_CHANNELS, N_CLASSES, BATCH_SIZE, EPOCHS
     from src.data_generator import DataGenerator
     import glob
     import os 
@@ -92,4 +91,5 @@ if __name__ == '__main__':
 
           print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
           .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - BATCH_SIZE])) 
+    model.save(os.path.join(BASE_DIR, 'models', 'panoptic-deeplab'))
 
