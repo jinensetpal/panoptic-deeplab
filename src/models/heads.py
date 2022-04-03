@@ -3,7 +3,6 @@ from src.models.convolutions import StackedConv2DSame
 import tensorflow as tf
 import functools
 
-
 def get_semantic_head():
     return PanopticDeepLabSingleHead(
         256,
