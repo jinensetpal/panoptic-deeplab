@@ -56,7 +56,6 @@ if __name__ == '__main__':
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001)
     model.compile(optimizer=optimizer, loss=loss_panoptic, metrics=["accuracy"])
 
-
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
       try:
@@ -92,4 +91,5 @@ if __name__ == '__main__':
           model.save(os.path.join(BASE_DIR, 'models', 'panoptic-deeplab'))
           print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}' 
           .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - BATCH_SIZE])) 
+          start_time = time.time()
 
