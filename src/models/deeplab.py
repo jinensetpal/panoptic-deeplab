@@ -41,6 +41,7 @@ if __name__ == '__main__':
               'batch_size': BATCH_SIZE,
               'n_classes': N_CLASSES,
               'n_channels': N_CHANNELS,
+              'target_size': (256, 512),
               'shuffle': True,
               'augment': {'zoom_range': [5, 20],
                           'random_flip': True}}

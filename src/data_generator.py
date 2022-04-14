@@ -1,5 +1,5 @@
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from src.const import BASE_DATA_PATH, IMG_SIZE
+from src.const import BASE_DATA_PATH, IMG_SIZE, DOWNSAMPLED_SIZE
 from src.visualization.centerpoint import get_center_targets
 import tensorflow as tf
 from src import const
@@ -12,7 +12,7 @@ import os
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, batch_size=32, dim=(1025, 2049), n_channels=1,
-                 n_classes=19, shuffle=True, state="training", augment=None, seed=0):
+                 n_classes=19, shuffle=True, state="training", target_size=None, augment=None, seed=0):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -23,6 +23,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.state = state
         self.augment = augment
         self.seed = seed
+        self.target_size = target_size
         self.on_epoch_end()
         random.seed(seed)
         self.gen = ImageDataGenerator()
@@ -76,7 +77,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             LOC, PREF = self.resolve_path(ID.split('/'))
             
             # load images
-            X_tar = cv2.imread(os.path.join(BASE_DATA_PATH, 'leftImg8bit', self.state, LOC, PREF + 'leftImg8bit' + '.png'), cv2.IMREAD_UNCHANGED)
+            X_tar = cv2.resize(cv2.imread(os.path.join(BASE_DATA_PATH, 'leftImg8bit', self.state, LOC, PREF + 'leftImg8bit' + '.png'), cv2.IMREAD_UNCHANGED), self.target_size[::-1])
             y_tar = {const.GT_KEY_SEMANTIC: cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_color.png'), cv2.IMREAD_UNCHANGED)}
             y_inst = get_center_targets(cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED))
             y_inst = cv2.imread(os.path.join(BASE_DATA_PATH, 'gtFine', self.state, LOC, PREF + 'gtFine_instanceIds.png'), cv2.IMREAD_UNCHANGED)
@@ -114,6 +115,7 @@ if __name__ == '__main__':
               'batch_size': BATCH_SIZE,
               'n_classes': N_CLASSES,
               'n_channels': N_CHANNELS,
+              'target_size': DOWNSAMPLED_SIZE,
               'shuffle': True,
               'augment': {'zoom_range': [5, 20],
                           'random_flip': True}}
