@@ -1,5 +1,5 @@
-from src.const import N_CLASSES, PRED_KEY_SEMANTIC, PRED_KEY_INSTANCE_CENTER, PRED_KEY_CENTER_REGRESSION
-from src.models.convolutions import StackedConv2DSame
+from ..const import N_CLASSES, PRED_KEY_SEMANTIC, PRED_KEY_INSTANCE_CENTER, PRED_KEY_CENTER_REGRESSION
+from .convolutions import StackedConv2DSame
 import tensorflow as tf
 import functools
 
@@ -74,7 +74,7 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
         self._pred_key = pred_key
 
         #  todo: It's possible that here we can use simple kera conv2d layers instead of the fancy deeplab one,
-        #  todo: that will save the entire convolutions.py file
+        #        that will save the entire convolutions.py file
         self.conv_block = StackedConv2DSame(
             conv_type=conv_type,
             num_layers=1,
