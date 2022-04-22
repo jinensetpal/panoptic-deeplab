@@ -1,4 +1,4 @@
-from src import const
+from .. import const
 import numpy as np
 import cv2
 
