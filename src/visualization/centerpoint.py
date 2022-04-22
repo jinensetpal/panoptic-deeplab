@@ -24,12 +24,26 @@ def avg_pos(position, new_position):
     """
     return [(position[2] * position[0] + new_position[0]) / (position[2] + 1), (position[1] * position[2] + new_position[1]) / (position[2] + 1), position[2] + 1]
 
+def get_semantic_map(img,
+                     path=None):
+    """ extracts a semantic segmented map from the panoptic map
+    Args:
+      img: image input for which semantic map is derived; input numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
+      path: write location to test output. None by default
+    """
+    sem = np.zeros(*img.shape, len(np.unique(img)))
+    for row in img.shape[0]:
+        for column in img.shape[1]:
+            sem[row][column][img[row][column] % 1000] = 1
+    return sem
+
+
 def get_center_targets(img, 
                        sigma=8,
                        path=None):
     """ generates targets for center heatmap
     Args:
-      img: image input for which centerpoint and heatmap are derived; input numpy numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
+      img: image input for which centerpoint and heatmap are derived; input numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
       sigma: standard deviation of the gaussian heatmap from the centerpoint
       path: write location to test output. None by default
         

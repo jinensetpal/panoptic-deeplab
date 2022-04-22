@@ -1,4 +1,3 @@
-from pathlib import Path
 import os
 
 N_CLASSES = 19
@@ -16,7 +15,7 @@ LEARNING_RATE = 0.001
 CLASS_MODE = 'categorical'
 EPOCHS = 20
 
-BASE_DIR = Path(os.getcwd()) #.resolve().parents[0]
+BASE_DIR = os.getcwd()
 BASE_DATA_PATH = os.path.join(BASE_DIR, 'data')
 PROD_MODEL_PATH = os.path.join(BASE_DIR, 'models')
 
