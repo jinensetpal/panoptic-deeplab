@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
 
-IMG_SIZE = (1025, 2049)
+IMG_SIZE = (256, 513)  # (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
+RES_SIZE = (265, 521)
+RES_SHAPE = RES_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
 EPOCHS = 1
@@ -10,6 +12,7 @@ K = .15
 
 CLASS_MODE = 'categorical'
 LEARNING_RATE = 1E-3
+WEIGHT_THRESHOLD = 12 ** 2  # 96 ** 2
 
 BASE_DIR = Path(os.getcwd())  # .resolve().parents[0]
 BASE_DATA_PATH = os.path.join(BASE_DIR, 'data', 'raw')
@@ -20,7 +23,6 @@ DATASOURCE_NAME = 'cityscapes'
 DATASET_NAME = 'cityscapes-processed'
 BUCKET_NAME = 's3://panoptic-deeplab'
 
-N_CLASSES = 19
 N_CHANNELS = 3
 
 SEED_TRAIN = 1
@@ -70,3 +72,4 @@ LABELS = ['unlabeled',
           'train',
           'motorcycle',
           'bicycle']  # license = -1, translates to unlabeled
+N_CLASSES = len(LABELS)

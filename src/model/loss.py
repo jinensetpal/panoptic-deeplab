@@ -10,10 +10,10 @@ class WeightedCrossEntropy(tf.keras.losses.Loss):
     def call(self, y_true, y_pred):
         weights_map = tf.ones(y_true.shape[:2])
         for label in range(y_true.shape[-1]):
-            if tf.reduce_sum(y_true[:, :, label]) < 96 ** 2: weights_map[y_true[:, :, label] == 1] = 3
+            if tf.reduce_sum(y_true[:, :, label]) < const.WEIGHT_THRESHOLD: weights_map[y_true[:, :, label] == 1] = 3
 
         loss = tf.sort(tf.reshape(tf.keras.losses.categorical_crossentropy(y_pred, y_true) * weights_map, [-1]), direction='DESCENDING')
-        return tf.reduce_sum(loss[:int(.15 * loss.shape[0])]) / -self.k
+        return tf.reduce_sum(loss[:int(self.k * loss.shape[0])]) / -self.k
 
 
 loss_sem = WeightedCrossEntropy(const.K)

@@ -62,7 +62,7 @@ if __name__ == '__main__':
                     y_pred.update(kpt_pred)
                     y_pred.update(regr_pred)
 
-                    loss = loss_panoptic(y[batch], y_pred)
+                    loss = loss_panoptic(y, y_pred)
                     print(loss)
                     gradients = tape.gradient(loss, tape.watched_variables())
                     optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
