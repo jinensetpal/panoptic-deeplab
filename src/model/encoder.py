@@ -145,7 +145,7 @@ def build_backbone(input_layer):
     residual = x
     x = block_5(x)
     x = add([x, residual])
-    
+
     return x, res2, res3
 
 
@@ -160,6 +160,7 @@ def set_xception_weights(layer_index, backbone_model, xception_model):
     """
     backbone_model.get_layer(index=layer_index).set_weights(xception_model.get_layer(index=layer_index).get_weights())
     return backbone_model
+
 
 def create_backbone_model(inp=None):
     """
@@ -180,6 +181,7 @@ def create_backbone_model(inp=None):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
     return backbone_model, res2, res3, x
+
 
 if __name__ == '__main__':
 

@@ -68,6 +68,8 @@ class PanopticInstanceAveragePrecision(tf.keras.metrics.Metric):
           instance_score_map: A 2D float tensor, where the pixels for an instance
             will have the probability of that being an instance.
           is_crowd_map: A 2D boolean tensor. Where it is True, the instance in that
+        """
+        pass
 
 
 class PanopticQuality(tf.keras.metrics.Metric):
@@ -299,4 +301,3 @@ class PanopticQuality(tf.keras.metrics.Metric):
         }
         base_config = super(PanopticQuality, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
-

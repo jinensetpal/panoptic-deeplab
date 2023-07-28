@@ -1,7 +1,8 @@
 from src.const import N_CLASSES, PRED_KEY_SEMANTIC, PRED_KEY_INSTANCE_CENTER, PRED_KEY_CENTER_REGRESSION
-from src.models.convolutions import StackedConv2DSame
+from src.model.convolutions import StackedConv2DSame
 import tensorflow as tf
 import functools
+
 
 def get_semantic_head():
     return PanopticDeepLabSingleHead(

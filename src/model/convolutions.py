@@ -21,9 +21,9 @@ rate. It also has optional pre- and post-global context layers.
     with Recursive Feature Pyramid and Switchable Atrous Convolution.
     arXiv:2006.02334
 """
-import functools
 from typing import Optional
 import tensorflow as tf
+
 
 def _compute_padding_size(kernel_size, atrous_rate):
     kernel_size_effective = kernel_size + (kernel_size - 1) * (atrous_rate - 1)
@@ -32,7 +32,7 @@ def _compute_padding_size(kernel_size, atrous_rate):
     pad_end = pad_total - pad_begin
     if pad_begin != pad_end:
         print('Convolution requires one more padding to the '
-                     'bottom-right pixel. This may cause misalignment.')
+              'bottom-right pixel. This may cause misalignment.')
     return pad_begin, pad_end
 
 
@@ -436,6 +436,7 @@ class StackedConv2DSame(tf.keras.layers.Layer):
                                                         self._activation)
             x = getattr(self, current_name)(x, training=training)
         return x
+
 
 def get_conv_bn_act_current_name(index, use_bn, activation):
     name = '_conv{}'.format(index + 1)

@@ -5,14 +5,20 @@ IMG_SIZE = (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
-EPOCHS = 1 
+EPOCHS = 1
+K = .15
 
 CLASS_MODE = 'categorical'
-EPOCHS = 20
+LEARNING_RATE = 1E-3
 
-BASE_DIR = Path(os.getcwd()) #.resolve().parents[0]
+BASE_DIR = Path(os.getcwd())  # .resolve().parents[0]
 BASE_DATA_PATH = os.path.join(BASE_DIR, 'data', 'raw')
 PROD_MODEL_PATH = os.path.join(BASE_DIR, 'models')
+
+REPO_NAME = 'jinensetpal/panoptic-deeplab'
+DATASOURCE_NAME = 'cityscapes'
+DATASET_NAME = 'cityscapes-processed'
+BUCKET_NAME = 's3://panoptic-deeplab'
 
 N_CLASSES = 19
 N_CHANNELS = 3
@@ -29,3 +35,38 @@ PRED_KEY_CENTER_REGRESSION = 'center_regression'
 GT_KEY_CENTER_REGRESSION = 'center_regression'
 PANOPTIC_LABEL_DIVISOR = 10000
 MAX_INSTANCE_PER_CATEGORY = 50
+
+LABELS = ['unlabeled',
+          'ego vehicle',
+          'rectification border',
+          'out of roi',
+          'static',
+          'dynamic',
+          'ground',
+          'road',
+          'sidewalk',
+          'parking',
+          'railtrack',
+          'building',
+          'wall',
+          'fence',
+          'guardrail',
+          'bridge',
+          'tunnel',
+          'pole',
+          'polegroup',
+          'trafficlight',
+          'trafficsign',
+          'vegetation',
+          'terrain',
+          'sky',
+          'person',
+          'rider',
+          'car',
+          'truck',
+          'bus',
+          'caravan',
+          'trailer',
+          'train',
+          'motorcycle',
+          'bicycle']  # license = -1, translates to unlabeled

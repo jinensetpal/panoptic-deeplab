@@ -2,7 +2,8 @@ from src import const
 import numpy as np
 import cv2
 
-def to_file(center, heatmap, filename): 
+
+def to_file(center, heatmap, filename):
     """ writes files to storage; testing
     Args:
       center: generated groundtruth centerpoint image
@@ -13,43 +14,47 @@ def to_file(center, heatmap, filename):
     cv2.imwrite(filename + '-center.png', np.where(center == 1, 65000, center))
     cv2.imwrite(filename + '-heatmap.png', heatmap * 1000)
 
+
 def avg_pos(position, new_position):
     """ updates the weighted average position to a center of mass
     Args:
       position: contains 3 elements, x-average, y-average and the pixels iterated upon
       new_position: contains x and y coordinates of an instance, to be added to the center of mass
-        
+
     Returns:
       A list containing updated average coordinates, incrementing the iterated pixel count
     """
     return [(position[2] * position[0] + new_position[0]) / (position[2] + 1), (position[1] * position[2] + new_position[1]) / (position[2] + 1), position[2] + 1]
 
-def get_center_targets(img, 
+
+def get_center_targets(img,
                        sigma=8,
                        path=None):
     """ generates targets for center heatmap
     Args:
-      img: image input for which centerpoint and heatmap are derived; input numpy numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
+      img: image input for which centerpoint and heatmap are derived; input numpy array using: cv2.imread('filename.type', cv2.IMREAD_UNCHANGED)
       sigma: standard deviation of the gaussian heatmap from the centerpoint
       path: write location to test output. None by default
-        
+
     Returns:
       A tuple containing groundtruth instance centerpoints and gaussian heatmaps
     """
     center_points = {}
     for length in range(img.shape[0]):
-        for width, key in enumerate(img[length][:]): # 'key' here represents encodings on the label map
-            if key > 9999: # 5-digit keys are 'things'
+        for width, key in enumerate(img[length][:]):  # 'key' here represents encodings on the label map
+            if key > 9999:  # 5-digit keys are 'things'
                 if key not in center_points:
                     center_points[key] = [length, width, 1]
                 else:
                     center_points[key] = avg_pos(center_points[key], [length, width])
 
-    ## center points computed
-    # import pprint
-    # pprint.pprint(center_points) # debug
+    regr = np.empty((*img.shape, 2))
+    for length in range(img.shape[0]):
+        for width, key in enumerate(img[length][:]):
+            if key > 9999:
+                regr[length, width] = np.array([length, width]) - np.array(center_points[key][:2])
 
-    ### gaussian heatmap - from detectron2/projects/Panoptic-DeepLab/panoptic_deeplab/target_generator.py 
+    # gaussian heatmap - from detectron2/projects/Panoptic-DeepLab/panoptic_deeplab/target_generator.py
     x = np.arange(0, 6 * sigma + 3, 1, float)
     y = x[:, np.newaxis]
     x0, y0 = 3 * sigma + 1, 3 * sigma + 1
@@ -61,7 +66,7 @@ def get_center_targets(img,
 
     for key in center_points:
         center[round(center_points[key][0]), round(center_points[key][1])] = 1
-        
+
         # generate center heatmap
         y, x = int(round(center_points[key][0])), int(round(center_points[key][1]))
         # upper left
@@ -80,8 +85,8 @@ def get_center_targets(img,
             heatmap[center_y0:center_y1, center_x0:center_x1],
             g[gaussian_y0:gaussian_y1, gaussian_x0:gaussian_x1],
         )
-        
+
     if path:
-        to_file(center, heatmap, path)
-    return {const.GT_KEY_INSTANCE_CENTER: center, 
-            const.GT_KEY_CENTER_REGRESSION: heatmap}
+        to_file(heatmap, regr, path)
+    return {const.GT_KEY_INSTANCE_CENTER: heatmap,
+            const.GT_KEY_CENTER_REGRESSION: regr}
