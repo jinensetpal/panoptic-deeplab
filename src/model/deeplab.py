@@ -4,6 +4,7 @@ from src.model.loss import loss_panoptic
 from ..const import IMG_SHAPE
 import tensorflow as tf
 from tqdm import tqdm
+import dagshub
 import mlflow
 import time
 
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     from src.data.cityscapes import get_generators
     import os
 
+    dagshub.init(const.REPO.split('/')[::-1])
     train, valid, test = get_generators()
 
     model = get_model()
