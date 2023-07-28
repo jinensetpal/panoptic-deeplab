@@ -35,7 +35,7 @@ if __name__ == '__main__':
     from src.data.cityscapes import get_generators
     import os
 
-    dagshub.init(const.REPO.split('/')[::-1])
+    dagshub.init(*const.REPO_NAME.split('/')[::-1])
     train, valid, test = get_generators()
 
     model = get_model()
@@ -43,17 +43,6 @@ if __name__ == '__main__':
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE)
     model.compile(optimizer=optimizer, loss=loss_panoptic, metrics=["accuracy"])
-
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        try:
-            tf.config.experimental.set_memory_growth(gpus[0], True)
-            logical_gpus = tf.config.list_logical_devices('GPU')
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-
-        except RuntimeError as e:
-            # Virtual devices must be set before GPUs have been initialized
-            print(e)
 
     mlflow.tensorflow.autolog()
     with mlflow.start_run():
@@ -79,7 +68,7 @@ if __name__ == '__main__':
                     optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
                     losses.append(loss)
 
-            model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab'))
+            model.save(os.path.join(const.BASE_DIR, 'models', f'panoptic-deeplab-{epoch}'))
             print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}'
                   .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - const.BATCH_SIZE]))
             start_time = time.time()

@@ -25,7 +25,7 @@ contextlib2==21.6.0
 contourpy==1.1.0
 cycler==0.11.0
 dacite==1.8.1
--e git+ssh://git@github.com/DagsHub/client.git@dc7d2b29abfb1236136fe5a9acb52e2288998e99#egg=dagshub
+dagshub>=0.3.0_3
 dataclasses-json==0.5.12
 debugpy==1.6.7
 decorator==5.1.1

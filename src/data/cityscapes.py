@@ -64,7 +64,7 @@ class InstanceTensorizer:
 
 
 def image_norm(filename):
-    return tf.convert_to_tensor(np.array(Image.open(filename).convert('RGB')) / 255)
+    return tf.convert_to_tensor(np.resize(np.array(Image.open(filename).convert('RGB')), (const.IMG_SHAPE)) / 255)
 
 
 def get_generators():
