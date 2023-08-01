@@ -1,15 +1,36 @@
+#!/usr/bin/env python3
+
 from src.model import encoder, decoder, heads, aspp
-from tensorflow.keras import Input, Model
-from src.model.loss import loss_panoptic
+from src.model.loss import PanopticLoss
+from tensorflow.keras import Input
 from ..const import IMG_SHAPE
 import tensorflow as tf
-from tqdm import tqdm
 import dagshub
 import mlflow
-import time
 
 
-def get_model(input_shape=None):
+class Model(tf.keras.Model):
+    def train_step(self, data):
+        X, sem, inst_centr, centr_regr = data
+        y = {const.GT_KEY_SEMANTIC: sem,
+             const.GT_KEY_INSTANCE_CENTER: inst_centr,
+             const.GT_KEY_CENTER_REGRESSION: centr_regr}
+
+        with tf.GradientTape() as tape:
+            seg_pred, kpt_pred, regr_pred = self(X, training=True)
+            y_pred = {}
+            y_pred.update(seg_pred)
+            y_pred.update(kpt_pred)
+            y_pred.update(regr_pred)
+
+            loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+            gradients = tape.gradient(loss, tape.watched_variables())
+            self.optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
+
+        return {m.name: m.result() for m in self.metrics}
+
+
+def get_model(input_shape=None, name='panoptic-deeplab'):
     if not input_shape:
         input_shape = IMG_SHAPE
 
@@ -25,8 +46,7 @@ def get_model(input_shape=None):
     sem_latent, inst_latent = sem_decoder([sem_latent, [res2, res3]]), inst_decoder([inst_latent, [res2, res3]])
     sem_output, inst_ctr_output, inst_rgr_output = sem_head(sem_latent), inst_ctr_head(inst_latent), inst_rgr_head(inst_latent)
 
-    model = Model(inputs=inp, outputs=[sem_output, inst_ctr_output, inst_rgr_output])
-    return model
+    return Model(inputs=inp, outputs=[sem_output, inst_ctr_output, inst_rgr_output], name='panoptic-deeplab')
 
 
 if __name__ == '__main__':
@@ -39,36 +59,14 @@ if __name__ == '__main__':
     train, valid, test = get_generators()
 
     model = get_model()
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE), loss=PanopticLoss(const.K), metrics=["accuracy"])
     model.summary()
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE)
-    model.compile(optimizer=optimizer, loss=loss_panoptic, metrics=["accuracy"])
-
     mlflow.tensorflow.autolog()
-    with mlflow.start_run():
-        start_time = time.time()
-        losses = []
-        for epoch in range(const.EPOCHS):
-            print(f'------- EPOCH {epoch + 1} -------')
-            for batch in tqdm(range(train.__len__())):
-                X, sem, inst_centr, centr_regr = train.__getitem__(batch)
-                y = {const.GT_KEY_SEMANTIC: sem,
-                     const.GT_KEY_INSTANCE_CENTER: inst_centr,
-                     const.GT_KEY_CENTER_REGRESSION: centr_regr}
-                with tf.GradientTape() as tape:
-                    seg_pred, kpt_pred, regr_pred = model(X, training=True)
-                    y_pred = {}
-                    y_pred.update(seg_pred)
-                    y_pred.update(kpt_pred)
-                    y_pred.update(regr_pred)
+    model.fit(train,
+              epochs=const.EPOCHS,
+              validation_data=valid,
+              use_multiprocessing=False)
 
-                    loss = loss_panoptic(y, y_pred)
-                    print(loss)
-                    gradients = tape.gradient(loss, tape.watched_variables())
-                    optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
-                    losses.append(loss)
-
-            model.save(os.path.join(const.BASE_DIR, 'models', f'panoptic-deeplab-{epoch}'))
-            print('Epoch {:d} | ET {:.2f} min | Panoptic Loss >> {:f}'
-                  .format(epoch + 1, (time.time() - start_time) / 60, losses[len(losses) - const.BATCH_SIZE]))
-            start_time = time.time()
+    model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab'))
+    model.evaluate(test)

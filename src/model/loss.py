@@ -15,26 +15,19 @@ class WeightedCrossEntropy(tf.keras.losses.Loss):
         loss = tf.sort(tf.reshape(tf.keras.losses.categorical_crossentropy(y_pred, y_true) * weights_map, [-1]), direction='DESCENDING')
         return tf.reduce_sum(loss[:int(self.k * loss.shape[0])]) / -self.k
 
+class PanopticLoss(tf.keras.losses.Loss):
+    def __init__(self, K):
+        super().__init__()
+        self.loss_sem = WeightedCrossEntropy(K)
 
-loss_sem = WeightedCrossEntropy(const.K)
-
-
-def loss_instance_center(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
-    return tf.keras.losses.mse(y_true, y_pred)
-
-
-def loss_offset(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
-    return tf.keras.losses.mae(y_true, y_pred)
-
-
-def loss_panoptic(y_true, y_pred) -> tf.Tensor:
-    lam_sem = 1
-    lam_heatmap = 200
-    lam_offset = 0.01
-
-    semantic_loss = loss_sem(y_true[const.GT_KEY_SEMANTIC], y_pred[const.PRED_KEY_SEMANTIC])
-    instance_center_loss = loss_instance_center(y_true[const.GT_KEY_INSTANCE_CENTER],
-                                                y_pred[const.PRED_KEY_INSTANCE_CENTER])
-    center_regression_loss = loss_offset(y_true[const.PRED_KEY_CENTER_REGRESSION],
-                                         y_pred[const.GT_KEY_CENTER_REGRESSION])
-    return lam_sem * semantic_loss + lam_heatmap * instance_center_loss + lam_offset * center_regression_loss
+    def call(self, y_true, y_pred) -> tf.Tensor:
+        lam_sem = 1
+        lam_heatmap = 200
+        lam_offset = 0.01
+    
+        semantic_loss = self.loss_sem(y_true[const.GT_KEY_SEMANTIC], y_pred[const.PRED_KEY_SEMANTIC])
+        instance_center_loss = tf.keras.losses.mse(y_true[const.GT_KEY_INSTANCE_CENTER],
+                                                   y_pred[const.PRED_KEY_INSTANCE_CENTER])
+        center_regression_loss = tf.keras.losses.mae(y_true[const.PRED_KEY_CENTER_REGRESSION],
+                                                     y_pred[const.GT_KEY_CENTER_REGRESSION])
+        return tf.constant(lam_sem * semantic_loss + lam_heatmap * instance_center_loss + lam_offset * center_regression_loss)

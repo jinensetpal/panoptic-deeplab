@@ -122,31 +122,30 @@ def build_backbone(input_layer):
     :param input_layer: TensorFlow Input object
     :return: First 5 blocks of the Xception architecture
     """
-    x = block_1(input_layer)
+    res1 = block_1(input_layer)
 
-    residual = Conv2D(128, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = Conv2D(128, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res1)
     residual = BatchNormalization()(residual)
 
-    x = block_2(x)
-    res2 = add([x, residual])
+    res2 = block_2(res1)
+    res2 = add([res2, residual])
 
     residual = Conv2D(256, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res2)
     residual = BatchNormalization()(residual)
 
     x = block_3(res2)
-    res3 = add([x, residual])
-
-    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(res3)
-    residual = BatchNormalization()(residual)
-
-    x = block_4(res3)
     x = add([x, residual])
 
-    residual = x
+    residual = Conv2D(728, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+    residual = BatchNormalization()(residual)
+
+    x = block_4(x)
+    x = add([x, residual])
+
     x = block_5(x)
     x = add([x, residual])
 
-    return x, res2, res3
+    return x, res1, res2
 
 
 def set_xception_weights(layer_index, backbone_model, xception_model):
@@ -172,7 +171,7 @@ def create_backbone_model(inp=None):
     if inp is None:
         inp = Input(shape=IMG_SHAPE)
 
-    x, res2, res3 = build_backbone(inp)
+    x, res1, res2 = build_backbone(inp)
     backbone_model = Model(inp, x)
 
     xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
@@ -180,7 +179,7 @@ def create_backbone_model(inp=None):
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
-    return backbone_model, res2, res3, x
+    return backbone_model, res1, res2, x
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Optional, Tuple, Collection
 import numpy as np
 import tensorflow as tf
 import src.common as common
+
 
 def get_metrics():
     metrics = [
@@ -225,8 +226,7 @@ class PanopticQuality(tf.keras.metrics.Metric):
                 continue
             # A false positive is not penalized if is mostly ignored in the
             # groundtruth.
-            if (prediction_ignored_overlap(pred_panoptic_label) /
-                pred_segment_areas[pred_panoptic_label]) > 0.5:
+            if (prediction_ignored_overlap(pred_panoptic_label) / pred_segment_areas[pred_panoptic_label]) > 0.5:
                 continue
             category = pred_panoptic_label // self.max_instances_per_category
             if category == self.ignored_label:

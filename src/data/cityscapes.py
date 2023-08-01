@@ -37,7 +37,7 @@ def preprocess():
 
 
 def semantic_map(filename):
-    img = np.resize(np.array(Image.open(filename)), const.RES_SHAPE)
+    img = np.array(Image.open(filename))
     res = np.empty((*img.shape, len(const.LABELS)))
 
     for label in range(-1, len(const.LABELS)):
@@ -52,7 +52,7 @@ class InstanceTensorizer:
 
     def process(self, filename):
         self.filename = filename
-        self.res = [tf.convert_to_tensor(x) for x in get_center_targets(np.resize(np.array(Image.open(filename)), const.RES_SHAPE)).values()]
+        self.res = [tf.convert_to_tensor(x) for x in get_center_targets(np.array(Image.open(filename))).values()]
 
     def instance_center(self, filename):
         if self.filename != filename: self.process(filename)

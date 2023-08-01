@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
+
 import os
 from pathlib import Path
 
-IMG_SIZE = (256, 513)  # (1025, 2049)
+IMG_SIZE = (257, 513)  # (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
-RES_SIZE = (265, 521)
-RES_SHAPE = RES_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
 EPOCHS = 1

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from src import const
 import numpy as np
 import cv2
