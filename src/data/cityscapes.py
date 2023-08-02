@@ -30,7 +30,8 @@ def preprocess():
         entry = dict(frame.iloc[0])
         for column, path in zip(frame.path.apply(lambda x: x.split('_')[-1].split('.')[0]), frame.path): entry[column] = path
         res.append(entry)
-    ds.upload_metadata_from_dataframe(pd.DataFrame(res).drop(['path', 'datapoint_id', 'size', 'dagshub_download_url'], axis=1), path_column='leftImg8bit')
+
+    ds.upload_metadata_from_dataframe(pd.DataFrame(res).drop(['path', 'datapoint_id', 'size', 'dagshub_download_url'], axis=1).dropna(), path_column='leftImg8bit')
 
     q = ds['split'] != None  # noqa: E711
     q.save_dataset(const.DATASET_NAME)
@@ -43,7 +44,7 @@ def semantic_map(filename):
     for label in range(-1, len(const.LABELS)):
         res[:, :, label] += (img == label).astype(int)
 
-    return tf.convert_to_tensor(res, dtype=tf.float32)
+    return tf.convert_to_tensor(np.resize(res, (*const.IMG_SIZE, const.N_CLASSES)), dtype=tf.float32)
 
 
 class InstanceTensorizer:
@@ -52,7 +53,7 @@ class InstanceTensorizer:
 
     def process(self, filename):
         self.filename = filename
-        self.res = [tf.convert_to_tensor(x) for x in get_center_targets(np.array(Image.open(filename))).values()]
+        self.res = [tf.convert_to_tensor(np.resize(x, (*const.IMG_SIZE, idx+1))) for idx, x in enumerate(get_center_targets(np.array(Image.open(filename))).values())]
 
     def instance_center(self, filename):
         if self.filename != filename: self.process(filename)
@@ -67,19 +68,21 @@ def image_norm(filename):
     return tf.convert_to_tensor(np.resize(np.array(Image.open(filename).convert('RGB')), const.IMG_SHAPE) / 255)
 
 
-def get_generators():
-    if not len(datasets.get_datasets(const.REPO_NAME)): preprocess()
+def get_generators(force_preprocessing=False):
+    if force_preprocessing or not len(datasets.get_datasets(const.REPO_NAME)): preprocess()
     ds = datasets.get_dataset(const.REPO_NAME, const.DATASET_NAME)
 
     instance_tensorizer = InstanceTensorizer()
-    return [(ds['split'] == split).all().as_ml_dataloader('tensorflow',
-                                                          shuffle=True,
-                                                          strategy='background',
-                                                          batch_size=const.BATCH_SIZE,
-                                                          metadata_columns=['labelIds', 'instanceIds', 'instanceIds'],
-                                                          tensorizers=[image_norm, semantic_map, instance_tensorizer.instance_center, instance_tensorizer.center_regression])
-            for split in ['train', 'val', 'test']]
+    kwargs = {'flavor': 'tensorflow',
+              'shuffle': True,
+              'strategy': 'background',
+              'post_hook': lambda x: (x[0], x[1:]),
+              'batch_size': const.BATCH_SIZE,
+              'metadata_columns': ['labelIds', 'instanceIds', 'instanceIds'],
+              'tensorizers': [image_norm, semantic_map, instance_tensorizer.instance_center, instance_tensorizer.center_regression]}
+    if const.TESTING: return [(ds['split'] == split).head().as_ml_dataloader(**kwargs) for split in ['train', 'val', 'test']]
+    return [(ds['split'] == split).all().as_ml_dataloader(**kwargs) for split in ['train', 'val', 'test']]
 
 
 if __name__ == '__main__':
-    train, valid, test = get_generators()
+    train, valid, test = get_generators(force_preprocessing=True)

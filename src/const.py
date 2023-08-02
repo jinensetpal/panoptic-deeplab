@@ -8,7 +8,10 @@ IMG_SHAPE = IMG_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
 EPOCHS = 1
+TESTING = True
+
 K = .15
+UPWEIGHT = 3
 
 CLASS_MODE = 'categorical'
 LEARNING_RATE = 1E-3

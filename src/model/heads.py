@@ -89,6 +89,12 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
             name='final_conv',
             kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.01))
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({"conv_block": self.conv_block,
+                       "final_conv": self.final_conv})
+        return config
+
     def call(self, features, training=False):
         """Performs a forward pass.
 

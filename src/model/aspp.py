@@ -94,6 +94,7 @@ class ASPPPool(tf.keras.layers.Layer):
     def __init__(self,
                  output_channels,
                  name,
+                 pool_size=(None, None),
                  bn_layer=tf.keras.layers.BatchNormalization):
         """Creates a pooling layer for the ASPP.
 
@@ -109,7 +110,7 @@ class ASPPPool(tf.keras.layers.Layer):
         """
         super(ASPPPool, self).__init__(name=name)
 
-        self._pool_size = (None, None)
+        self._pool_size = pool_size
         self._conv_bn_act = convolutions.Conv2DSame(
             output_channels,
             kernel_size=1,
@@ -169,8 +170,7 @@ class ASPPPool(tf.keras.layers.Layer):
             # Tiled image pooling
             pool_size = self._pool_size
 
-        x = backend.pool2d(input_tensor, pool_size, padding='valid',
-                           pool_mode='avg')
+        x = tf.keras.layers.AveragePooling2D(pool_size=pool_size, padding='valid')(input_tensor)
         x = self._conv_bn_act(x, training=training)
 
         target_h = tf.shape(input_tensor)[1]
@@ -245,6 +245,7 @@ class ASPP(tf.keras.layers.Layer):
         self._aspp_conv3 = ASPPConv(output_channels, rate3, name='aspp_conv3',
                                     bn_layer=bn_layer)
         self._aspp_pool = ASPPPool(output_channels, name='aspp_pool',
+                                   pool_size=(16, 32),
                                    bn_layer=bn_layer)
         # Dropout is needed only when ASPP five branches are used.
         self._proj_drop = layers.Dropout(rate=0.1)

@@ -418,6 +418,13 @@ class StackedConv2DSame(tf.keras.layers.Layer):
         self._use_bn = use_bn
         self._activation = activation
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({'_num_layers': self._num_layers,
+                       '_use_bn': self._use_bn,
+                       '_activation': self._activation})
+        return config
+
     def call(self, input_tensor, training=False):
         """Performs a forward pass.
 
