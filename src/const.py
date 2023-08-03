@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import os
 from pathlib import Path
+from math import prod
+import os
 
 IMG_SIZE = (257, 513)  # (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
@@ -10,7 +11,7 @@ BATCH_SIZE = 1
 TESTING = os.getenv('TESTING', True)
 EPOCHS = 10 if TESTING else 50
 
-K = .15
+K = .15 * prod(IMG_SIZE)
 UPWEIGHT = 3
 
 CLASS_MODE = 'categorical'

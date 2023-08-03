@@ -107,4 +107,4 @@ class PanopticDeepLabSingleHead(tf.keras.layers.Layer):
           The dictionary containing the predictions under the specified key.
         """
         x = self.conv_block(features, training=training)
-        return {self._pred_key: self.final_conv(x)}
+        return self.final_conv(x)

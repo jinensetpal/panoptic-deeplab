@@ -454,3 +454,111 @@ def get_conv_bn_act_current_name(index, use_bn, activation):
             activation.lower() != 'linear'):
         name += '_act'
     return name
+
+
+class GlobalContext(tf.keras.layers.Layer):
+    """Class for the global context modules in Switchable Atrous Convolution."""
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        input_shape = tf.TensorShape(input_shape)
+        input_channel = self._get_input_channel(input_shape)
+        self.global_average_pooling = tf.keras.layers.GlobalAveragePooling2D()
+        self.convolution = tf.keras.layers.Conv2D(
+            input_channel, 1, strides=1, padding='same', name=self.name + '_conv',
+            kernel_initializer='zeros', bias_initializer='zeros')
+
+    def call(self, inputs, *args, **kwargs):
+        outputs = self.global_average_pooling(inputs)
+        outputs = tf.expand_dims(outputs, axis=1)
+        outputs = tf.expand_dims(outputs, axis=1)
+        outputs = self.convolution(outputs)
+        return inputs + outputs
+
+    def _get_input_channel(self, input_shape):
+        # Reference: tf.keras.layers.convolutional.Conv.
+        if input_shape.dims[-1].value is None:
+            raise ValueError('The channel dimension of the inputs '
+                             'should be defined. Found `None`.')
+        return int(input_shape[-1])
+
+
+class SwitchableAtrousConvolution(tf.keras.layers.Conv2D):
+    """Class for the Switchable Atrous Convolution."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._average_pool = tf.keras.layers.AveragePooling2D(
+            pool_size=(5, 5), strides=1, padding='same')
+        self._switch = tf.keras.layers.Conv2D(
+            1,
+            kernel_size=1,
+            strides=self.strides,
+            padding='same',
+            dilation_rate=1,
+            name='switch',
+            kernel_initializer='zeros',
+            bias_initializer='zeros')
+
+    def large_convolution_op(self, inputs, kernel):
+        if self.padding == 'causal': tf_padding = 'VALID'
+        elif isinstance(self.padding, str): tf_padding = self.padding.upper()
+        else: tf_padding = self.padding
+        large_dilation_rate = list(self.dilation_rate)
+        large_dilation_rate = [r * 3 for r in large_dilation_rate]
+        return tf.nn.convolution(
+            inputs, kernel,
+            strides=list(self.strides),
+            padding=tf_padding,
+            dilations=large_dilation_rate,
+            data_format=self._tf_data_format,
+            name=self.__class__.__name__ + '_large')
+
+    def call(self, inputs):
+        # Reference: tf.keras.layers.convolutional.Conv.
+        input_shape = inputs.shape
+        switches = self._switch(self._average_pool(inputs))
+
+        if self._is_causal:  # Apply causal padding to inputs for Conv1D.
+            inputs = tf.compat.v1.pad(inputs, self._compute_causal_padding(inputs))
+
+        outputs = self.convolution_op(inputs, self.kernel)
+        outputs_large = self.large_convolution_op(inputs, self.kernel)
+
+        outputs = switches * outputs_large + (1 - switches) * outputs
+
+        if self.use_bias: outputs = tf.nn.bias_add(outputs, self.bias, data_format=self._tf_data_format)
+
+        if not tf.executing_eagerly():
+            # Infer the static output shape:
+            out_shape = self.compute_output_shape(input_shape)
+            outputs.set_shape(out_shape)
+
+        if self.activation is not None:
+            return self.activation(outputs)
+        return outputs
+
+    def squeeze_batch_dims(self, inp, op, inner_rank):
+        # Reference: tf.keras.utils.conv_utils.squeeze_batch_dims.
+        with tf.name_scope('squeeze_batch_dims'):
+            shape = inp.shape
+
+            inner_shape = shape[-inner_rank:]
+            if not inner_shape.is_fully_defined():
+                inner_shape = tf.compat.v1.shape(inp)[-inner_rank:]
+
+            batch_shape = shape[:-inner_rank]
+            if not batch_shape.is_fully_defined(): batch_shape = tf.compat.v1.shape(inp)[:-inner_rank]
+
+            if isinstance(inner_shape, tf.TensorShape): inp_reshaped = tf.reshape(inp, [-1] + inner_shape.as_list())
+            else: inp_reshaped = tf.reshape(inp, tf.concat(([-1], inner_shape), axis=-1))
+
+            out_reshaped = op(inp_reshaped)
+
+            out_inner_shape = out_reshaped.shape[-inner_rank:]
+            if not out_inner_shape.is_fully_defined(): out_inner_shape = tf.compat.v1.shape(out_reshaped)[-inner_rank:]
+
+            out = tf.reshape(out_reshaped, tf.concat((batch_shape, out_inner_shape), axis=-1))
+
+            out.set_shape(inp.shape[:-inner_rank] + out.shape[-inner_rank:])
+            return out

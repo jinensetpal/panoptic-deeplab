@@ -2,6 +2,7 @@
 
 from src.model import encoder, decoder, heads, aspp
 from src.model.loss import WeightedCrossEntropy
+from src.model.metrics import get_metrics
 from tensorflow.keras import Input
 from ..const import IMG_SHAPE
 import tensorflow as tf
@@ -14,13 +15,9 @@ class Model(tf.keras.Model):
         X, y = data
 
         with tf.GradientTape() as tape:
-            seg_pred, kpt_pred, regr_pred = self(X, training=True)
-            y_pred = {}
-            y_pred.update(seg_pred)
-            y_pred.update(kpt_pred)
-            y_pred.update(regr_pred)
+            y_pred = self(X, training=True)
 
-            loss = self.compiled_loss(y, [seg_pred, kpt_pred, regr_pred], regularization_losses=self.losses)
+            loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses)
             gradients = tape.gradient(loss, tape.watched_variables())
             self.optimizer.apply_gradients(zip(gradients, tape.watched_variables()))
 
@@ -56,7 +53,7 @@ if __name__ == '__main__':
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE),
                   loss=[WeightedCrossEntropy(const.K), 'mse', 'mae'],
                   loss_weights=[1, 200, 0.01],
-                  metrics=["accuracy"],
+                  metrics=get_metrics(),
                   run_eagerly=True)
     model.summary()
 
