@@ -63,7 +63,8 @@ if __name__ == '__main__':
     mlflow.tensorflow.autolog()
     model.fit(train,
               epochs=const.EPOCHS,
+              validation_data=valid,
               use_multiprocessing=False)
 
-    model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab'))
+    model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab' + '-minibatch' if const.TESTING else ''))
     model.evaluate(test)
