@@ -17,6 +17,6 @@ class WeightedCrossEntropy(tf.keras.losses.Loss):
                     weights_map = tf.tensor_scatter_nd_update(weights_map, tf.where(y_true[:, :, label] == 1), tf.cast(tf.fill(int(n_pixels), const.UPWEIGHT), dtype=tf.int8))
 
             loss = tf.sort(tf.reshape(tf.keras.losses.categorical_crossentropy(y_pred, y_true) * tf.cast(weights_map, dtype=tf.float32), [-1]), direction='DESCENDING')
-            return tf.reduce_sum(loss[:int(self.k * loss.shape[0])]) / -self.k
+            return tf.reduce_sum(loss[:int(self.k * loss.shape[0])]) / self.k
 
         return tf.reduce_mean(tf.map_fn(fn=compute_loss, elems=tf.stack([batch_true, batch_pred], axis=-1), fn_output_signature=tf.float32))

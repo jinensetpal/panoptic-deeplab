@@ -11,7 +11,7 @@ import numpy as np
 
 def enrich(entry):
     split = entry['path'].split('/')
-    entry['split'] = 'invalid' if len(split) == 1 else split[1]
+    entry['split'] = None if len(split) == 1 else split[1]
     if entry['split'] != 'invalid':
         entry['location'] = split[2]
         entry['id'] = '.'.join(split[-1].split('_')[:3])
@@ -80,7 +80,7 @@ def get_generators(force_preprocessing=False):
               'batch_size': const.BATCH_SIZE,
               'metadata_columns': ['labelIds', 'instanceIds', 'instanceIds'],
               'tensorizers': [image_norm, semantic_map, instance_tensorizer.instance_center, instance_tensorizer.center_regression]}
-    if const.TESTING: return [(ds['split'] == split).head().as_ml_dataloader(**kwargs) for split in ['train', 'val', 'test']]
+    if const.TESTING: return [(ds['split'] == split).head(10).as_ml_dataloader(**kwargs) for split in ['train', 'val', 'test']]
     return [(ds['split'] == split).all().as_ml_dataloader(**kwargs) for split in ['train', 'val', 'test']]
 
 

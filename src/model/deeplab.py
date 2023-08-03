@@ -27,10 +27,7 @@ class Model(tf.keras.Model):
         return {m.name: m.result() for m in self.metrics}
 
 
-def get_model(input_shape=None, name='panoptic-deeplab'):
-    if not input_shape:
-        input_shape = IMG_SHAPE
-
+def get_model(input_shape=IMG_SHAPE, name='panoptic-deeplab'):
     inp = Input(shape=input_shape)
     backbone, res2, res3, latent_out = encoder.create_backbone_model(inp)
 
@@ -66,7 +63,6 @@ if __name__ == '__main__':
     mlflow.tensorflow.autolog()
     model.fit(train,
               epochs=const.EPOCHS,
-              validation_data=valid,
               use_multiprocessing=False)
 
     model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab'))

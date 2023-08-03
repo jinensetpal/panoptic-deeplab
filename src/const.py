@@ -7,14 +7,14 @@ IMG_SIZE = (257, 513)  # (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
-EPOCHS = 1
 TESTING = True
+EPOCHS = 10 if TESTING else 50
 
 K = .15
 UPWEIGHT = 3
 
 CLASS_MODE = 'categorical'
-LEARNING_RATE = 1E-3
+LEARNING_RATE = 1E-1 if TESTING else 1E-3
 WEIGHT_THRESHOLD = 12 ** 2  # 96 ** 2
 
 BASE_DIR = Path(os.getcwd())  # .resolve().parents[0]
