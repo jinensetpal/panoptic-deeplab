@@ -4,40 +4,31 @@ from pathlib import Path
 from math import prod
 import os
 
-IMG_SIZE = (257, 513)  # (1025, 2049)
-IMG_SHAPE = IMG_SIZE + (3,)
-COLOR_MODE = 'rgb'
-BATCH_SIZE = 1
+BASE_DIR = Path(__file__).parent.parent
 TESTING = os.getenv('TESTING', 'true').lower() == 'true'
+NOHUP_PATH = BASE_DIR / 'nohup.out'
+
+IMG_SIZE = (257, 513)  # downsampled from (1025, 2049)
+N_CHANNELS = 3
+IMG_SHAPE = IMG_SIZE + (N_CHANNELS,)
+BATCH_SIZE = 1
 EPOCHS = 10 if TESTING else 50
 
+LEARNING_RATE = 1E-1 if TESTING else 1E-3
+WEIGHT_THRESHOLD = 12 ** 2  # 96 ** 2
 K = int(.15 * prod(IMG_SIZE))
 UPWEIGHT = 3
 
-CLASS_MODE = 'categorical'
-LEARNING_RATE = 1E-1 if TESTING else 1E-3
-WEIGHT_THRESHOLD = 12 ** 2  # 96 ** 2
-
-BASE_DIR = Path(os.getcwd())  # .resolve().parents[0]
-BASE_DATA_PATH = os.path.join(BASE_DIR, 'data', 'raw')
-PROD_MODEL_PATH = os.path.join(BASE_DIR, 'models')
+BASE_DATA_PATH = BASE_DIR / 'data' / 'raw'
+PROD_MODEL_PATH = BASE_DIR / 'models'
 
 REPO_NAME = 'jinensetpal/panoptic-deeplab'
 DATASOURCE_NAME = 'cityscapes'
 DATASET_NAME = 'cityscapes-processed'
 BUCKET_NAME = 's3://panoptic-deeplab'
 
-N_CHANNELS = 3
 
-SEED_TRAIN = 1
-SEED_TEST = 2
-SEED_VAL = 3
-
-PRED_KEY_SEMANTIC = 'semantic'
-GT_KEY_SEMANTIC = 'semantic'
-PRED_KEY_INSTANCE_CENTER = 'instance_center'
 GT_KEY_INSTANCE_CENTER = 'instance_center'
-PRED_KEY_CENTER_REGRESSION = 'center_regression'
 GT_KEY_CENTER_REGRESSION = 'center_regression'
 PANOPTIC_LABEL_DIVISOR = 10000
 MAX_INSTANCE_PER_CATEGORY = 50

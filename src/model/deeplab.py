@@ -8,6 +8,7 @@ from ..const import IMG_SHAPE
 import tensorflow as tf
 import dagshub
 import mlflow
+import os
 
 
 class Model(tf.keras.Model):
@@ -59,10 +60,13 @@ if __name__ == '__main__':
     model.summary()
 
     mlflow.tensorflow.autolog()
-    model.fit(train,
-              epochs=const.EPOCHS,
-              validation_data=valid,
-              use_multiprocessing=False)
+    with mlflow.start_run():
+        model.fit(train,
+                  epochs=const.EPOCHS,
+                  validation_data=valid,
+                  use_multiprocessing=False)
 
-    model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab' + '-minibatch' if const.TESTING else ''))
-    model.evaluate(test)
+        model.save(os.path.join(const.BASE_DIR, 'models', 'panoptic-deeplab' + '-minibatch' if const.TESTING else ''))
+        model.evaluate(test)
+
+        if const.NOHUP_PATH.exists(): mlflow.log_artifact(const.NOHUP_PATH)
