@@ -26,11 +26,12 @@ class Model(tf.keras.Model):
 
 def get_model(input_shape=IMG_SHAPE, name='panoptic-deeplab'):
     inp = Input(shape=input_shape)
-    backbone, res2, res3, latent_out = encoder.create_backbone_model(inp)
+    backbone, res2, res3 = encoder.create_backbone_model(inp)
 
-    sem_aspp, inst_aspp = aspp.get_aspp(latent_out, name='semantic_aspp'), aspp.get_aspp(latent_out, name='instance_aspp')
+    sem_aspp, inst_aspp = aspp.build_aspp(backbone.output, name='semantic_aspp'), aspp.build_aspp(backbone.output, name='instance_aspp')
     sem_decoder, inst_decoder = decoder.build_decoder(sem_aspp.output, [res2, res3], 'semantic_decoder'), decoder.build_decoder(inst_aspp.output, [res2, res3], 'instance_decoder')
-    sem_head, inst_ctr_head, inst_rgr_head = heads.get_semantic_head(), heads.get_instance_center_head(), heads.get_instance_regression_head()
+    sem_head, inst_ctr_head, inst_rgr_head = [heads.build_head(sem_decoder.output if 'instance' not in name else inst_decoder.output, name)
+                                              for name in ['semantic_head', 'instance_center_head', 'instance_regression_head']]
 
     latent = backbone(inp)
     sem_latent, inst_latent = sem_aspp(latent), inst_aspp(latent)
@@ -51,9 +52,9 @@ if __name__ == '__main__':
 
     model = get_model()
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE),
-                  loss=[WeightedCrossEntropy(const.K), 'mse', 'mae'],
+                  loss=[WeightedCrossEntropy(const.K), 'mae', 'mse'],
                   loss_weights=[1, 200, 0.01],
-                  metrics=get_metrics(),
+                  metrics=['accuracy'],  # get_metrics(),
                   run_eagerly=True)
     model.summary()
 

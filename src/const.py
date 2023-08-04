@@ -8,10 +8,10 @@ IMG_SIZE = (257, 513)  # (1025, 2049)
 IMG_SHAPE = IMG_SIZE + (3,)
 COLOR_MODE = 'rgb'
 BATCH_SIZE = 1
-TESTING = os.getenv('TESTING', True)
+TESTING = os.getenv('TESTING', 'true').lower() == 'true'
 EPOCHS = 10 if TESTING else 50
 
-K = .15 * prod(IMG_SIZE)
+K = int(.15 * prod(IMG_SIZE))
 UPWEIGHT = 3
 
 CLASS_MODE = 'categorical'

@@ -161,7 +161,7 @@ def set_xception_weights(layer_index, backbone_model, xception_model):
     return backbone_model
 
 
-def create_backbone_model(inp=None):
+def create_backbone_model(inp=None, name='backbone'):
     """
     Build a backbone model using the first 5 layers of Xception using it's pre-trained wights
 
@@ -172,14 +172,14 @@ def create_backbone_model(inp=None):
         inp = Input(shape=IMG_SHAPE)
 
     x, res1, res2 = build_backbone(inp)
-    backbone_model = Model(inp, x)
+    backbone_model = Model(inp, x, name=name)
 
     xception_model = Xception(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
 
     for index in range(46):
         backbone_model = set_xception_weights(index, backbone_model, xception_model)
 
-    return backbone_model, res1, res2, x
+    return backbone_model, res1, res2
 
 
 if __name__ == '__main__':
