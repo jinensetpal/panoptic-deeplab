@@ -54,9 +54,7 @@ if __name__ == '__main__':
     model = get_model()
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=const.LEARNING_RATE),
                   loss=[WeightedCrossEntropy(const.K), 'mae', 'mse'],
-                  loss_weights=[1, 200, 0.01],
-                  metrics=['accuracy'],  # get_metrics(),
-                  run_eagerly=True)
+                  loss_weights=[1, 200, 0.01])  # get_metrics(),
     model.summary()
 
     mlflow.tensorflow.autolog()
