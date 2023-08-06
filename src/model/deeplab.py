@@ -45,8 +45,12 @@ def get_model(input_shape=IMG_SHAPE, name='panoptic-deeplab'):
 if __name__ == '__main__':
     # imports under __main__ function to avoid circular imports
     from src.data.cityscapes import get_generators
+    from dotenv import load_dotenv
     from src import const
     import os
+
+    load_dotenv()
+    dagshub.auth.add_app_token(os.environ['TOKEN'])
 
     dagshub.init(*const.REPO_NAME.split('/')[::-1])
     train, valid, test = get_generators()
